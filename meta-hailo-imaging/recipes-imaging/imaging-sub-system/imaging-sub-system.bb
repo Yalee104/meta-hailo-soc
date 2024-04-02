@@ -8,7 +8,7 @@ RDEPENDS:${PN} += " qtmultimedia"
 DEPENDS += "qtbase-native ninja-native libdrm bash cmake-native qwt-qt5 qtbase qtdeclarative qtmultimedia qmllive boost"
 
 SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.3.0-dev/imaging-sub-system-04-02/imaging-sub-system.tar.gz"
-SRC_URI[sha256sum] = "4f433b051a57c710784648982facad370f26fc7898aed02d87020fdda3e0d5ba"
+SRC_URI[sha256sum] = "684fb196cf5c5f620a99b62ac5afb09ce33f8f43c040bb495acde10c9c5a0d03"
 
 B = "${WORKDIR}/imaging-sub-system/build"
 S = "${WORKDIR}/imaging-sub-system/scripts"
