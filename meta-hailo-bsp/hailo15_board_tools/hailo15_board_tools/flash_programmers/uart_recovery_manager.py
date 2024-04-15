@@ -98,9 +98,10 @@ class UartRecoveryFlashProgrammer(FlashProgrammer):
         except Exception:
             raise Exception("Failed to load the recovery firmware, could not connect to the recovery agent please \
 try the following:\n \
-                            1. Make sure bootstrap set to boot from uart.\n \
-                            2. The USB cable connected correctly\n \
-                            3. Reset the target and try again")
+                            1. Make sure board is turned on.\n \
+                            2. Make sure bootstrap set to boot from uart.\n \
+                            3. The USB cable connected correctly\n \
+                            4. Reset the target and try again")
 
         if (firmware_major != FIRMWARE_VERSION_MAJOR) or (firmware_minor != FIRMWARE_VERSION_MINOR):
             raise Exception("Incompatibility between the loaded UART recovery firmware version and the script version")

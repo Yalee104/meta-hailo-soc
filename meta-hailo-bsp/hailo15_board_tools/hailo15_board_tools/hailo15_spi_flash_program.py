@@ -11,6 +11,7 @@ import time
 import subprocess
 import tempfile
 import struct
+import re
 from contextlib import contextmanager
 
 from hailo15_board_tools.flash_programmers.flash_programmer import FlashProgrammer, logger
@@ -20,6 +21,9 @@ from hailo15_board_tools.flash_programmers.ftdi_flash_programmer import FtdiFlas
 
 class FlashDataValidationException(Exception):
     pass
+
+
+MAC_ADDR_FORMAT_LEN = 17
 
 
 class Hailo15FlashManager():
@@ -32,6 +36,8 @@ class Hailo15FlashManager():
     FLASH_SECTION_SIZE_SCU_BL = 0x6000
     FLASH_OFFSET_SCU_BL_CONFIG = 0x6000
     FLASH_SECTION_SIZE_SCU_BL_CONFIG = 0x1000
+    FLASH_OFFSET_DEVICE_CONFIG = 0x7000
+    FLASH_SECTION_SIZE_DEVICE_CONFIG = 0x1000
     FLASH_OFFSET_SCU_FW = 0x8000
     FLASH_SECTION_SIZE_SCU_FW = 0x38000
     FLASH_OFFSET_UBOOT_DEVICE_TREE = 0x40000
@@ -42,6 +48,9 @@ class Hailo15FlashManager():
     FLASH_SECTION_SIZE_UBOOT_SPL = 0x2C000
     FLASH_OFFSET_UBOOT_ENV = 0x50000
     FLASH_SECTION_SIZE_UBOOT_ENV = 0x4000
+    # if working with a/b - notice to change FLASH_B_IMAGE_OFFSET as well
+    FLASH_OFFSET_UBOOT_TFA = 0x80000
+    FLASH_SECTION_SIZE_UBOOT_TFA = 0x100000  # 1024 KB
 
     FLASH_B_IMAGE_OFFSET = 0x80000
     FLASH_A_IMAGE_OFFSET = 0x8000
@@ -106,6 +115,16 @@ class Hailo15FlashManager():
         self.programmer.erase(self.FLASH_OFFSET_UBOOT_ENV, self.FLASH_SECTION_SIZE_UBOOT_ENV)
         time.sleep(1)
 
+    def erase_and_program_device_mac_config(self, flash_mac_addr, validate=1):
+        logger.info("Programming Mac address {}".format(flash_mac_addr))
+        with tempfile.NamedTemporaryFile(suffix=".bin") as mac_config:
+            mac_bytes = bytes.fromhex(flash_mac_addr.replace(':', ''))
+            mac_config.write(mac_bytes)
+            mac_config.flush()
+            self.erase_and_program_flash(mac_config.name,
+                                         offset=self.FLASH_OFFSET_DEVICE_CONFIG,
+                                         reserved_section_size=self.FLASH_SECTION_SIZE_DEVICE_CONFIG, validate=validate)
+
     def erase_and_program_scu_fw(self, file_path, validate=1):
         logger.info(f"Programming SCU firmware file: {file_path}...")
         self.erase_and_program_flash(file_path,
@@ -166,10 +185,25 @@ class Hailo15FlashManager():
                                      reserved_section_size=self.FLASH_SECTION_SIZE_CUSTOMER_CERTIFICATE,
                                      validate=validate)
 
+    def erase_and_program_uboot_tfa(self, file_path, validate=1):
+        logger.info(f"Programming U-Boot & TF-A file: {file_path}...")
+        self.erase_and_program_flash(file_path,
+                                     offset=self.FLASH_OFFSET_UBOOT_TFA,
+                                     reserved_section_size=self.FLASH_SECTION_SIZE_UBOOT_TFA,
+                                     validate=validate)
+
+
+def validate_mac_address(flash_mac_addr):
+    if len(flash_mac_addr) != MAC_ADDR_FORMAT_LEN:
+        raise argparse.ArgumentTypeError(f"Invalid MAC address: {flash_mac_addr}")
+    if not re.match(r'^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$', flash_mac_addr):
+        raise argparse.ArgumentTypeError(f"Invalid MAC address: {flash_mac_addr}")
+    return flash_mac_addr
+
 
 def run(scu_firmware=None, scu_bootloader=None, bootloader=None, bootloader_env=None, uboot_device_tree=None,
-        customer_cert=None, verify=True, uart_load=False, serial_device_name='/dev/ttyUSB3', jump_to_flash=False,
-        is_b_image=False):
+        customer_cert=None, uboot_tfa=None, verify=True, uart_load=False, serial_device_name='/dev/ttyUSB3',
+        jump_to_flash=False, is_b_image=False, flash_mac_addr=None):
     if uart_load:
         uart_comm = UartRecoveryCommunicator(serial_device_name)
         programmer = uart_comm.get_flash_programmer()
@@ -193,6 +227,10 @@ def run(scu_firmware=None, scu_bootloader=None, bootloader=None, bootloader_env=
         flash_manager.erase_and_program_customer_certificate(customer_cert, validate=verify)
     if uboot_device_tree:
         flash_manager.erase_and_program_uboot_device_tree(uboot_device_tree, validate=verify)
+    if flash_mac_addr:
+        flash_manager.erase_and_program_device_mac_config(flash_mac_addr, validate=verify)
+    if uboot_tfa:
+        flash_manager.erase_and_program_uboot_tfa(uboot_tfa, validate=verify)
 
     if uart_load and jump_to_flash:
         uart_comm.jump_bootrom_flash()
@@ -224,6 +262,10 @@ def main():
         '--customer-certificate',
         help='The path to the file containing the customer certificate.')
 
+    parser.add_argument(
+        '--uboot-tfa',
+        help='The path to the file containing the U-Boot & TF-A itb.')
+
     parser.add_argument('--verify', type=int, choices=[0, 1], default=1,
                         help='Verify the written data by reviewing and comparing to the written data (default is true)')
 
@@ -235,10 +277,14 @@ def main():
 
     parser.add_argument('--b-image', action='store_true', help='Program B image.')
 
+    parser.add_argument('--flash-mac-addr', type=validate_mac_address, default=None,
+                        help='Set Flash Mac address, Mac format xx:xx:xx:xx:xx:xx')
+
     args = parser.parse_args()
 
     run(args.scu_firmware, args.scu_bootloader, args.bootloader, args.bootloader_env, args.uboot_device_tree,
-        args.customer_certificate, args.verify, args.uart_load, args.serial_device_name, args.b_image)
+        args.customer_certificate, args.uboot_tfa,  args.verify, args.uart_load, args.serial_device_name, args.b_image,
+        flash_mac_addr=args.flash_mac_addr)
 
 
 if __name__ == '__main__':

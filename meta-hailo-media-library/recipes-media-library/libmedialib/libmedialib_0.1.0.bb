@@ -4,8 +4,8 @@ DESCRIPTION = "Media Library package recipe \
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=031eb3f48c82f13ff6cdb783af612501"
 
-SRC_URI = "git://git@github.com/hailo-ai/hailo-media-library.git;protocol=https;branch=1.2.2"
-SRCREV = "b584a75030390588bf489c974a30aebcb758903a"
+SRC_URI = "git://git@github.com/hailo-ai/hailo-media-library.git;protocol=https;branch=1.3.0"
+SRCREV = "9c1f571679a2882b6a307747844f30cecafeeed0"
 
 inherit media-library-base
 
@@ -14,7 +14,7 @@ MEDIA_LIBRARY_BUILD_TARGET = "core"
 DEPENDS:append = " gstreamer1.0-plugins-good rapidjson json-schema-validator expected httplib"
 
 # Hailo-15 Dependencies
-DEPENDS:append = " video-encoder libhailodsp"
+DEPENDS:append = " video-encoder libhailodsp libhailort"
 # Hailo-15 Runtime-Dependencies
 RDEPENDS:${PN} += " medialib-configs"
 

@@ -4,8 +4,8 @@ DESCRIPTION = "Media Library Configuration files recipe \
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://${WORKDIR}/media-library/LICENSE;md5=263ee034adc02556d59ab1ebdaea2cda"
 
-SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.2.2/media-library.tar.gz"
-SRC_URI[sha256sum] = "48dd09fb201f6a3a2ac135857f9c2b419fe56e9e451affddaf0109cdfa51479f"
+SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.3.0/media-library.tar.gz"
+SRC_URI[sha256sum] = "2ff7d3eeb226f38913ca578453583df999fa884110af775fe47e1b575b0eb264"
 
 S = "${WORKDIR}/media-library/medialib"
 

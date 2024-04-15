@@ -24,8 +24,8 @@ SWUPDATE_IMAGES += "u-boot-tfa.itb"
 SWUPDATE_IMAGES += "u-boot-spl.bin"
 SWUPDATE_IMAGES += "u-boot-initial-env.bin"
 SWUPDATE_IMAGES += "u-boot.dtb.signed"
-SWUPDATE_IMAGES += "hailo15_scu_fw.bin"
-SWUPDATE_IMAGES += "hailo15_scu_bl.bin"
+SWUPDATE_IMAGES += "${SCU_FW_BINARY_NAME}"
+SWUPDATE_IMAGES += "${SCU_BL_BINARY_NAME}"
 
 SWUPDATE_IMAGES_FSTYPES[core-image-minimal] = ".ext4"
 SWUPDATE_IMAGES_FSTYPES[swupdate-image] = ".ext4.gz"
@@ -39,8 +39,10 @@ SWUPDATE_IMAGES_FSTYPES[u-boot-initial-env.bin] = ""
 SWUPDATE_IMAGES_NOAPPEND_MACHINE[u-boot-initial-env.bin] = "1"
 SWUPDATE_IMAGES_FSTYPES[u-boot.dtb.signed] = ""
 SWUPDATE_IMAGES_NOAPPEND_MACHINE[u-boot.dtb.signed] = "1"
-SWUPDATE_IMAGES_FSTYPES[hailo15_scu_fw.bin] = ""
-SWUPDATE_IMAGES_NOAPPEND_MACHINE[hailo15_scu_fw.bin] = "1"
-SWUPDATE_IMAGES_FSTYPES[hailo15_scu_bl.bin] = ""
-SWUPDATE_IMAGES_NOAPPEND_MACHINE[hailo15_scu_bl.bin] = "1"
+python () {
+    d.setVarFlags("SWUPDATE_IMAGES_FSTYPES",  {d.getVar("SCU_FW_BINARY_NAME") : ""})
+    d.setVarFlags("SWUPDATE_IMAGES_NOAPPEND_MACHINE",  {d.getVar("SCU_FW_BINARY_NAME") : "1"})
+    d.setVarFlags("SWUPDATE_IMAGES_FSTYPES",  {d.getVar("SCU_BL_BINARY_NAME") : ""})
+    d.setVarFlags("SWUPDATE_IMAGES_NOAPPEND_MACHINE",  {d.getVar("SCU_BL_BINARY_NAME") : "1"})
+}
 inherit swupdate

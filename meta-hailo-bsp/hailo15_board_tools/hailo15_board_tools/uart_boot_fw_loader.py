@@ -2,8 +2,7 @@ import serial
 import time
 import ctypes
 import argparse
-from hailo15_board_tools.flash_programmers.uart_recovery_manager\
-        import UartRecoveryCommunicator  # noqa: E402
+from hailo15_board_tools.flash_programmers.uart_recovery_manager import UartRecoveryCommunicator
 
 UART_BAUDRATE = 57600
 UART_TIMEOUT = 2  # seconds
@@ -187,17 +186,12 @@ class UartBootFWLoader():
 
 
 def run(firmware, is_secure_chip=True, serial_device_name='/dev/ttyUSB3'):
-    try:
-        uart_boot_fw_loader = UartBootFWLoader(is_secure_chip, serial_device_name)
-        uart_boot_fw_loader.load_file(firmware)
-        time.sleep(1)
-        uart_comm = UartRecoveryCommunicator(serial_device_name)
-        programmer = uart_comm.get_flash_programmer()
-        programmer.open_interface()
-    except Exception as e:
-        print(f"Error: {e}")
-    else:
-        print("UART recovery firmware loaded successfully to the device")
+    uart_boot_fw_loader = UartBootFWLoader(is_secure_chip, serial_device_name)
+    uart_boot_fw_loader.load_file(firmware)
+    time.sleep(1)
+    uart_comm = UartRecoveryCommunicator(serial_device_name)
+    programmer = uart_comm.get_flash_programmer()
+    programmer.open_interface()
 
 
 def main():
@@ -212,7 +206,12 @@ def main():
 
     args = parser.parse_args()
 
-    run(args.firmware, args.is_secure_chip, args.serial_device_name)
+    try:
+        run(args.firmware, args.is_secure_chip, args.serial_device_name)
+    except Exception as e:
+        print(f"Error: {e}")
+    else:
+        print("UART recovery firmware loaded successfully to the device")
 
 
 if __name__ == '__main__':
