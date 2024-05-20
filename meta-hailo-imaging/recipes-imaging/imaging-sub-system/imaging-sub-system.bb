@@ -7,8 +7,8 @@ inherit externalsrc ccache qmake5_paths
 RDEPENDS:${PN} += " qtmultimedia"
 DEPENDS += "qtbase-native ninja-native libdrm bash cmake-native qwt-qt5 qtbase qtdeclarative qtmultimedia qmllive boost"
 
-SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.3.0/imaging-sub-system.tar.gz"
-SRC_URI[sha256sum] = "99b36a9b50075d5e62547bd899388c390853accea1f63e0955c7c3b34a4da7df"
+SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.3.1/imaging-sub-system.tar.gz"
+SRC_URI[sha256sum] = "a7fe8bd8605c4739d3aa2e64007c1b0168c1bbc09da87ce1224f3a67246bbd9c"
 
 B = "${WORKDIR}/imaging-sub-system/build"
 S = "${WORKDIR}/imaging-sub-system/scripts"
@@ -45,8 +45,15 @@ do_install() {
 	install -m 0755 -D  ${B}/dist/bin/v4l_ctrl_example ${D}${bindir}
 	install -m 0755 -D  ${B}/dist/bin/hailo_ctrl ${D}${bindir}
 	install -m 0755 -D  ${B}/dist/bin/fps ${D}${bindir}
+	install -m 0755 -D  ${B}/dist/bin/mcm_manager ${D}${bindir}
+	install -m 0755 -D  ${S}/units/hailo/mcm_manager/hdr_4k.hef ${D}${bindir}
+	install -m 0755 -D  ${S}/units/hailo/mcm_manager/hdr_fhd.hef ${D}${bindir}
+
+
+    install -m 0755 -D  ${B}/dist/bin/v4l_event_handling_example ${D}${bindir}
 
 	install -m 0755 -D  ${S}/mediacontrol/server/media_server_cfg.json ${D}${bindir}
+	install -m 0755 -D  ${S}/mediacontrol/server/media_server_cfg_nnhdr.json ${D}${bindir}
 
 	install -d ${D}${includedir}/imaging
 	install -d ${D}${includedir}/imaging/cam_device
@@ -63,9 +70,13 @@ do_install() {
 	
 	cp -R --no-dereference --preserve=mode,links -v ${B}/dist/include/* ${D}${includedir}/imaging
 	install -m 0755 -D ${S}/scripts/hailo_tuning_server.sh ${D}${bindir}
+	install -m 0755 -D ${S}/scripts/hailo_tuning_server_nnhdr_fhd.sh ${D}${bindir}
+	install -m 0755 -D ${S}/scripts/tuning_mcm_start.sh ${D}${bindir}
+
 
 	# Add sensor/configuration specific setup scripts
 	install -m 0755 -D ${S}/scripts/setup_imx*.sh ${D}${bindir}
+	install -m 0755 -D ${S}/scripts/find_subdevice_path.sh ${D}${bindir}
 	
 	#install -m 0755 -D ${S}/scripts/*  ${D}${TARGET_SBIN_DIR}/scripts
 

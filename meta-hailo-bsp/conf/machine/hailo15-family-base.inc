@@ -4,9 +4,9 @@
 #@NAME: Hailo15 machine
 #@DESCRIPTION: Machine configuration for Hailo15
 
-require conf/machine/include/arm/arch-armv8a.inc
-
 MACHINEOVERRIDES =. "hailo15:"
+
+require conf/machine/include/arm/arch-armv8a.inc
 
 PREFERRED_PROVIDER_virtual/kernel_forcevariable = "linux-yocto-hailo"
 PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-hailo"

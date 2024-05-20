@@ -1,5 +1,5 @@
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c
-index ec53bc9e83..c1ec126019 100644
+index ec53bc9..c1ec126 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c
 +++ b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c
 @@ -57,6 +57,7 @@
@@ -21,18 +21,19 @@ index ec53bc9e83..c1ec126019 100644
  }
  
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c
-index d00f7a80dc..def5ad0690 100644
+index d00f7a8..11a06d7 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c
 +++ b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c
-@@ -50,6 +50,7 @@
+@@ -50,6 +50,8 @@
  #include <string.h>
  #include <sys/time.h>
  #include <unistd.h>
 +#include <linux/v4l2-subdev.h>
++#include <stdio.h>
  
  #include <gst/video/gstvideometa.h>
  #include <gst/video/gstvideopool.h>
-@@ -57,6 +58,10 @@
+@@ -57,6 +59,10 @@
  #include "gstv4l2elements.h"
  #include "gstv4l2src.h"
  
@@ -43,23 +44,28 @@ index d00f7a80dc..def5ad0690 100644
  #include "gstv4l2colorbalance.h"
  #include "gstv4l2tuner.h"
  #include "gstv4l2vidorient.h"
-@@ -67,6 +72,7 @@ GST_DEBUG_CATEGORY (v4l2src_debug);
+@@ -66,6 +72,10 @@ GST_DEBUG_CATEGORY (v4l2src_debug);
  #define GST_CAT_DEFAULT v4l2src_debug
  
- #define DEFAULT_PROP_DEVICE   "/dev/video0"
-+#define VIDEO_GET_VSM_IOC 0xc00c44c1
+-#define DEFAULT_PROP_DEVICE   "/dev/video0"
++#define DEFAULT_PROP_DEVICE         "/dev/video0"
++#define HAILO_VIDEO_PREFIX          "hailo-vid"
++#define HAILO_V4L_DEVICE_NAME_PATH  "/sys/class/video4linux/%s/name"
++#define VIDEO_GET_VSM_IOC           0xc00c44c1
++#define MAX_V4L_NAME_LEN            (50)
  
  enum
  {
-@@ -90,6 +96,7 @@ GST_IMPLEMENT_V4L2_VIDORIENT_METHODS (GstV4l2Src, gst_v4l2src);
+@@ -90,6 +100,8 @@ GST_IMPLEMENT_V4L2_VIDORIENT_METHODS (GstV4l2Src, gst_v4l2src);
  
  static void gst_v4l2src_uri_handler_init (gpointer g_iface,
      gpointer iface_data);
++static gboolean gst_get_is_hailo_video_device(GstV4l2Src *v4l2src, const gchar *device_name);
 +static guint gst_v4l2src_get_v4l2_ctrl_id(int fd, const char * v4l2_ctrl_name);
  
  #define gst_v4l2src_parent_class parent_class
  G_DEFINE_TYPE_WITH_CODE (GstV4l2Src, gst_v4l2src, GST_TYPE_PUSH_SRC,
-@@ -840,6 +847,7 @@ static gboolean
+@@ -840,6 +852,7 @@ static gboolean
  gst_v4l2src_start (GstBaseSrc * src)
  {
    GstV4l2Src *v4l2src = GST_V4L2SRC (src);
@@ -67,10 +73,11 @@ index d00f7a80dc..def5ad0690 100644
  
    v4l2src->offset = 0;
    v4l2src->next_offset_same = FALSE;
-@@ -852,6 +860,10 @@ gst_v4l2src_start (GstBaseSrc * src)
+@@ -852,6 +865,11 @@ gst_v4l2src_start (GstBaseSrc * src)
    v4l2src->has_bad_timestamp = FALSE;
    v4l2src->last_timestamp = 0;
  
++  v4l2src->hailo_v4l2_is_hailo_video_device = gst_get_is_hailo_video_device(v4l2src, obj->videodev);
 +  v4l2src->hailo_v4l2_ae_fps_id = gst_v4l2src_get_v4l2_ctrl_id(obj->video_fd, "isp_ae_fps");
 +  v4l2src->hailo_v4l2_ae_converged_id = gst_v4l2src_get_v4l2_ctrl_id(obj->video_fd, "isp_ae_converged");
 +  v4l2src->hailo_v4l2_ae_luma_id = gst_v4l2src_get_v4l2_ctrl_id(obj->video_fd, "isp_ae_luma");
@@ -78,7 +85,7 @@ index d00f7a80dc..def5ad0690 100644
    return TRUE;
  }
  
-@@ -924,6 +936,169 @@ gst_v4l2src_change_state (GstElement * element, GstStateChange transition)
+@@ -924,6 +942,200 @@ gst_v4l2src_change_state (GstElement * element, GstStateChange transition)
    return ret;
  }
  
@@ -94,7 +101,7 @@ index d00f7a80dc..def5ad0690 100644
 +
 +  rc = obj->ioctl(obj->video_fd, VIDIOC_QUERY_EXT_CTRL, &qctrl);
 +  if (rc < 0) {
-+    printf("VIDIOC_QUERY_EXT_CTRL returned %d", rc);
++    printf("VIDIOC_QUERY_EXT_CTRL returned %d\n", rc);
 +    return rc;
 +  }
 +
@@ -129,7 +136,12 @@ index d00f7a80dc..def5ad0690 100644
 +
 +    GstMemory *mem;
 +    GstV4l2Memory *vmem;
-+    GstV4l2MemoryGroup *group;      
++    GstV4l2MemoryGroup *group;
++
++    if (!v4l2src->hailo_v4l2_is_hailo_video_device) {
++      GST_DEBUG_OBJECT(v4l2src, "Not hailo video device. skip adding VSM metadata");
++      return TRUE;
++    }
 +
 +    // Get V4l2 memory group from buffer - taken from gstv4l2bufferpool.c (gst_v4l2_is_buffer_valid)
 +    mem = gst_buffer_peek_memory(buf, 0);
@@ -216,6 +228,32 @@ index d00f7a80dc..def5ad0690 100644
 +    return TRUE;
 +}
 +
++static gboolean gst_get_is_hailo_video_device(GstV4l2Src *v4l2src, const gchar *device_name)
++{
++    FILE* ptr;
++    char v4l_name[MAX_V4L_NAME_LEN];
++    gchar *base_name, *file_path;
++    base_name = g_path_get_basename(device_name);
++    file_path = g_strdup_printf(HAILO_V4L_DEVICE_NAME_PATH, base_name);
++    ptr = fopen(file_path, "r");
++
++    if (NULL == ptr) {
++        GST_ERROR_OBJECT(v4l2src, "Unable to open file %s", file_path);
++        g_free(file_path);
++        g_free(base_name);
++        return FALSE;
++    }
++
++    if (fgets(v4l_name, MAX_V4L_NAME_LEN, ptr) == NULL) {
++        GST_ERROR_OBJECT(v4l2src, "Could not read from file %s", file_path);
++    }
++
++    fclose(ptr);
++    g_free(file_path);
++    g_free(base_name);
++    return (memcmp(v4l_name, HAILO_VIDEO_PREFIX, strlen(HAILO_VIDEO_PREFIX)) == 0);
++}
++
 +static guint gst_v4l2src_get_v4l2_ctrl_id(int fd, const char * v4l2_ctrl_name)
 +{
 +  int rc = 0;
@@ -237,7 +275,7 @@ index d00f7a80dc..def5ad0690 100644
 +      id = qctrl.id;
 +      break;
 +    }
-+    
++
 +    qctrl.id |= next_flag;
 +
 +  } while (1);
@@ -248,7 +286,7 @@ index d00f7a80dc..def5ad0690 100644
  static GstFlowReturn
  gst_v4l2src_create (GstPushSrc * src, GstBuffer ** buf)
  {
-@@ -973,6 +1148,9 @@ gst_v4l2src_create (GstPushSrc * src, GstBuffer ** buf)
+@@ -973,6 +1185,9 @@ gst_v4l2src_create (GstPushSrc * src, GstBuffer ** buf)
    if (G_UNLIKELY (ret != GST_FLOW_OK))
      goto error;
  
@@ -259,13 +297,14 @@ index d00f7a80dc..def5ad0690 100644
    duration = obj->duration;
  
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h
-index 39a5baf8ff..9c97097388 100644
+index 39a5baf..481e1f8 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h
 +++ b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h
-@@ -62,6 +62,9 @@ struct _GstV4l2Src
+@@ -62,6 +62,10 @@ struct _GstV4l2Src
    guint64 renegotiation_adjust;
  
    GstClockTime ctrl_time;
++  gboolean hailo_v4l2_is_hailo_video_device;
 +  guint hailo_v4l2_ae_fps_id;
 +  guint hailo_v4l2_ae_converged_id;
 +  guint hailo_v4l2_ae_luma_id;
@@ -274,7 +313,7 @@ index 39a5baf8ff..9c97097388 100644
  
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2.h b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2.h
 new file mode 100644
-index 0000000000..e1373626f5
+index 0000000..e137362
 --- /dev/null
 +++ b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2.h
 @@ -0,0 +1,29 @@
@@ -310,7 +349,7 @@ index 0000000000..e1373626f5
 \ No newline at end of file
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.c b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.c
 new file mode 100644
-index 0000000000..edd78b623a
+index 0000000..edd78b6
 --- /dev/null
 +++ b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.c
 @@ -0,0 +1,181 @@
@@ -498,7 +537,7 @@ index 0000000000..edd78b623a
 \ No newline at end of file
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.h b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.h
 new file mode 100644
-index 0000000000..49ec6d53e9
+index 0000000..49ec6d5
 --- /dev/null
 +++ b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.h
 @@ -0,0 +1,54 @@
@@ -558,7 +597,7 @@ index 0000000000..49ec6d53e9
 +G_END_DECLS
 \ No newline at end of file
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/meson.build b/subprojects/gst-plugins-good/sys/v4l2/meson.build
-index 65f551fb64..9391faf05a 100644
+index 65f551f..9391faf 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/meson.build
 +++ b/subprojects/gst-plugins-good/sys/v4l2/meson.build
 @@ -33,7 +33,8 @@ v4l2_sources = [

@@ -25,6 +25,7 @@ do_compile() {
 
 do_deploy() {
     install -m 0644 ${B}/u-boot-spl.bin ${B}/u-boot-tfa.itb ${DEPLOYDIR}/
+    install -m 0644 ${WORKDIR}/u-boot-tfa.its ${DEPLOYDIR}/
 }
 
 addtask deploy after do_compile
