@@ -5,8 +5,8 @@ DESCRIPTION = "Media Library Encoder OSD API \
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=031eb3f48c82f13ff6cdb783af612501"
 
-SRC_URI = "git://git@github.com/hailo-ai/hailo-media-library.git;protocol=https;branch=1.3.1"
-SRCREV = "c17a14ed4a8f6f0e1c4c6c04cfec3d867d4e4b8a"
+SRC_URI = "git://git@github.com/hailo-ai/hailo-media-library.git;protocol=https;branch=1.4.0"
+SRCREV = "5ef459b58494e11d7c738c78b5f7317da618824f"
 
 inherit media-library-base
 
@@ -22,8 +22,8 @@ do_install:append(){
     install -m 0644 ${S}/api/examples/*.json ${D}/${bindir}
 }
 
-FILES:${PN} += "${libdir}/libencoderosd.so ${bindir}/vision_preproc_example ${bindir}/*.json  ${incdir}/medialibrary/*.hpp"
-FILES:${PN}-lib += "${libdir}/libencoderosd.so"
+FILES:${PN} += "${libdir}/libhailo_media_library_api.so ${bindir}/frontend_example ${bindir}/*.json  ${incdir}/medialibrary/*.hpp"
+FILES:${PN}-lib += "${libdir}/libhailo_media_library_api.so"
 RDEPENDS:${PN}-staticdev = ""
 RDEPENDS:${PN}-dev = ""
 RDEPENDS:${PN}-dbg = ""

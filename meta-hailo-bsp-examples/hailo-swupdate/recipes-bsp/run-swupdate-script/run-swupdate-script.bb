@@ -2,7 +2,9 @@ DESCRIPTION = "Run the swupdate process"
 SECTION = "apps"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://../COPYING.MIT;md5=aa7321c8e0df442b97243c2e1d64c9ee"
+
 RDEPENDS:${PN} += "bash"
+RDEPENDS:${PN} += "scu-bl"
 targetdir = "/etc"
 
 SRC_URI = "file://run_swupdate.sh \

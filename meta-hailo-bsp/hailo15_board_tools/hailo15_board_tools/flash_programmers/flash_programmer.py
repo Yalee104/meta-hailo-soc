@@ -28,3 +28,6 @@ class FlashProgrammer(ABC):
     @abstractmethod
     def open_interface(self):
         pass
+
+    def close(self):
+        pass

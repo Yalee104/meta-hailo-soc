@@ -1,0 +1,1 @@
+IMAGE_INSTALL:append = " u-boot-env libubootenv-bin run-swupdate-script swupdate hailo-ddr-measurement-script"

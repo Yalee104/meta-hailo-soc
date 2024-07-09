@@ -15,7 +15,9 @@ TARGET_ARCH = "aarch64"
 TUNE_FEATURES = "aarch64"
 
 IMAGE_FSTYPES = "wic ext4"
-WKS_FILE = "sd.wks"
+WKS_FILE = "sd.wks.in"
+# Default SD fixed size is 32M for production, for development we use 64M
+SD_FIXED_SIZE = "32"
 
 IMAGE_BOOT_FILES += "fitImage u-boot-tfa.itb"
 
@@ -56,7 +58,8 @@ SPL_SIGN_KEYNAME = "customer"
 
 SCU_FW_BINARY_EXTENSION = "bin"
 SCU_FW_SUFFIX = "scu_fw"
-SCU_FW_BINARY_NAME = "${SCU_FW_MACHINE}_${SCU_FW_SUFFIX}.${SCU_FW_BINARY_EXTENSION}"
+SCU_FW_BASE_BINARY_NAME = "${SCU_FW_SUFFIX}.${SCU_FW_BINARY_EXTENSION}"
+SCU_FW_BINARY_NAME = "${SCU_FW_MACHINE}_${SCU_FW_BASE_BINARY_NAME}"
 
 SCU_BL_BINARY_EXTENSION = "bin"
 SCU_BL_SUFFIX = "scu_bl"

@@ -222,3 +222,21 @@ ddr_set_counter_filter() {
 
     ddr_enable_counter $1
 }
+
+ddr_enable_csm() {
+    echo "1" > $base/csm/enabled
+}
+
+ddr_disable_csm() {
+    echo "0" > $base/csm/enabled
+}
+
+ddr_enable_dsm() {
+    echo "1" > $base/dsm_rx/enabled
+    echo "1" > $base/dsm_tx/enabled
+}
+
+ddr_disable_dsm() {
+    echo "0" > $base/dsm_rx/enabled
+    echo "0" > $base/dsm_tx/enabled
+}

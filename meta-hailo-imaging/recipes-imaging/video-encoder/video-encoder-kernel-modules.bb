@@ -4,9 +4,9 @@ LIC_FILES_CHKSUM = "file://${S}/software/linux_reference/kernel_module/LICENSE;m
 
 inherit module
 
-VIDEO_ENCODER_BRANCH = "1.3.1"
+VIDEO_ENCODER_BRANCH = "1.4.0"
 
-SRCREV = "10b618f4a9f97012109c062512f270585c5138d7"
+SRCREV = "27637e3e9878104f5805fc1835817a748d3b043f"
 SRC_URI = "git://git@github.com/hailo-ai/hailo-vision.git;protocol=https;branch=${VIDEO_ENCODER_BRANCH}"
 
 # Source code

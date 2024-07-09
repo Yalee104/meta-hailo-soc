@@ -1,3 +1,4 @@
+from pyftdi.spi import SpiController
 from spiflash import serialflash
 import math
 
@@ -32,9 +33,13 @@ class FtdiFlashProgrammer(FlashProgrammer):
     def __init__(self, url=FTDI_URL, freq=30E6):
         self.url = url
         self.freq = freq
+        self._spi_controller = None
 
     def open_interface(self):
-        self._flash_device = serialflash.SerialFlashManager().get_flash_device(url=self.url, cs=0, freq=self.freq)
+        self._spi_controller = SpiController(cs_count=1)
+        self._spi_controller.configure(self.url)
+        self._flash_device = serialflash.SerialFlashManager().get_from_controller(self._spi_controller,
+                                                                                  cs=0, freq=self.freq)
         self.identify()
 
     def write(self, address, buffer_data):
@@ -51,3 +56,9 @@ class FtdiFlashProgrammer(FlashProgrammer):
 
     def identify(self):
         logger.info(f'flash detected "{self._flash_device}"')
+
+    def close(self):
+        if self._spi_controller:
+            self._spi_controller.terminate()
+            self._spi_controller = None
+            logger.info("Close flash interface")

@@ -23,8 +23,8 @@ function usage()
 
 function get_boot_copy()
 {
-    read -r qspi_flash_ab_offset < /sys/devices/soc0/qspi_flash_ab_offset
-    if [ $((qspi_flash_ab_offset)) -eq 0 ]; then
+    read -r active_boot_image_offset < /sys/devices/soc0/boot_info/active_boot_image_offset
+    if [ $((active_boot_image_offset)) -eq 0 ]; then
         copy="a"
     else
         copy="b"
@@ -33,8 +33,8 @@ function get_boot_copy()
 
 function get_scu_bl_copy()
 {
-    # read the field from QSPI flash
-    scu_bl_qspi_flash_ab_offset=$(dd if=/dev/mtdblock0 bs=1 count=4 skip=$((0x6000)) 2>/dev/null | hexdump -e '"%x"')
+    #read the offset from SCU BL config in flash (this is actually the first item in image_descriptors array)
+    scu_bl_qspi_flash_ab_offset=$(dd if=/dev/mtdblock0 bs=1 count=4 skip=$((0x5008)) 2>/dev/null | hexdump -e '"%x"')
     if [ "$scu_bl_qspi_flash_ab_offset" = "0" ]; then
         copy="a"
     else

@@ -2,26 +2,17 @@
 
 set -e
 
-
-function num_to_uint32le() {
-    local n=$(($1))
-    printf "%b" $(printf '\\x%02x\\x%02x\\x%02x\\x%02x' \
-                        $(($n & 0xFF)) \
-                        $((($n & 0xFF00) >> 8)) \
-                        $((($n & 0xFF0000) >> 16)) \
-                        $((($n & 0xFF000000) >> 24)))
-}
-
-function edit_qspi_flash_ab_offset()
+function write_scu_bl_cfg_bin()
 {
-    qspi_flash_ab_offset=$1
-    scu_bl_config_file="/tmp/scu_bl_config.bin"
+    scu_bl_cfg_filename=$1
 
-    dd if=/dev/mtdblock0 of=${scu_bl_config_file} bs=4096 count=1 skip=6 2>/dev/null
+    echo "writing scu_bl configuration file named '$scu_bl_cfg_filename'"
 
-    num_to_uint32le ${qspi_flash_ab_offset} | dd conv=notrunc of=${scu_bl_config_file} 2>/dev/null
+    # Write SCU bootloader configuration to flash at offset 0x5000
+    dd if=${scu_bl_cfg_filename} of=/dev/mtdblock0 bs=4096 count=1 seek=5 2>/dev/null
 
-    dd if=${scu_bl_config_file} of=/dev/mtdblock0 bs=4096 count=1 seek=6 2>/dev/null
+    # Write the same SCU bootloader configuration also to flash at offset 0x6000
+    dd if=${scu_bl_cfg_filename} of=/dev/mtdblock0 bs=4096 count=1 seek=6 2>/dev/null
 }
 
 function usage()
@@ -46,9 +37,9 @@ if [[ ${next_boot_copy} != "a" && ${next_boot_copy} != "b" ]]; then
 fi
 
 if [ ${next_boot_copy} = "a" ]; then
-    edit_qspi_flash_ab_offset 0
+    write_scu_bl_cfg_bin "/etc/scu_bl_cfg/scu_bl_cfg_a.bin"
 fi
 
 if [ ${next_boot_copy} = "b" ]; then
-    edit_qspi_flash_ab_offset 0x78000
+    write_scu_bl_cfg_bin "/etc/scu_bl_cfg/scu_bl_cfg_b.bin"
 fi

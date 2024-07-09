@@ -6,7 +6,7 @@ inherit deploy
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=263ee034adc02556d59ab1ebdaea2cda"
 
-BASE_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.3.1/recovery-fw"
+BASE_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.4.0/recovery-fw"
 FW = "hailo15_uart_recovery_fw.bin"
 LICENSE_FILE = "LICENSE"
 SRC_URI = "${BASE_URI}/${FW};name=fw \
@@ -18,5 +18,8 @@ SRC_URI[lic.sha256sum] = "ca96445e6e33ae0a82170ea847b0925c864492f0cbb6342d42c54f
 do_deploy() {
   install -m 644 -D ${WORKDIR}/${FW} ${DEPLOYDIR}/${FW}
 }
+
+PACKAGES = "${PN} ${PN}-dev"
+ALLOW_EMPTY:${PN} = "1"
 
 addtask deploy after do_compile

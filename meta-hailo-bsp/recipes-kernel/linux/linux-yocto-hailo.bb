@@ -9,8 +9,8 @@ LINUX_VERSION = "5.15.32"
 PV = "${LINUX_VERSION}"
 
 LINUX_YOCTO_HAILO_URI ??= "git@github.com/hailo-ai/linux-yocto-hailo.git"
-LINUX_YOCTO_HAILO_BRANCH ??= "1.3.1"
-LINUX_YOCTO_HAILO_SRCREV ??= "7506ae58ae54c4b10212b280fa62742ae02bd4d6"
+LINUX_YOCTO_HAILO_BRANCH ??= "1.4.0"
+LINUX_YOCTO_HAILO_SRCREV ??= "c070852f720e643fc0f1a7b014b431ca7355954e"
 LINUX_YOCTO_HAILO_BOARD_VENDOR ?= "hailo"
 
 KBRANCH = "${LINUX_YOCTO_HAILO_BRANCH}"
@@ -23,9 +23,11 @@ SRC_URI = "git://${LINUX_YOCTO_HAILO_URI};protocol=https;branch=${KBRANCH} \
            file://defconfig \
            file://cfg/;destsuffix=cfg;type=kmeta"
 SRC_URI:append = "${@bb.utils.contains('MACHINE_FEATURES', 'kernel_debug_en', ' file://cfg/debug-configuration.cfg', '', d)}"
+SRC_URI:append = "${@bb.utils.contains('MACHINE_FEATURES', 'dma_zone_disable', ' file://cfg/dma-zone-disable.cfg', '', d)}"
+SRC_URI:append:hailo10-m2 = " file://cfg/dma-zone-disable.cfg"
 
 SDIO0_POSTFIX = "${@bb.utils.contains('MACHINE_FEATURES', 'sdio0', '-sdio0', '', d)}"
-KERNEL_DEVICETREE = "${LINUX_YOCTO_HAILO_BOARD_VENDOR}/${MACHINE}${SDIO0_POSTFIX}.dtb"
+KERNEL_DEVICETREE ?= "${LINUX_YOCTO_HAILO_BOARD_VENDOR}/${MACHINE}${SDIO0_POSTFIX}.dtb"
 
 KCONFIG_MODE="--alldefconfig"
 

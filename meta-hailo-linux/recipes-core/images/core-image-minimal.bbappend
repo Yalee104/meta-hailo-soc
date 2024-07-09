@@ -1,1 +1,1 @@
-EXTRA_IMAGE_FEATURES += "ssh-server-openssh allow-root-login"
+require include/core-image-append-dev.inc

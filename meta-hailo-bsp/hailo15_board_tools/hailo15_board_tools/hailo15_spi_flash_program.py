@@ -24,6 +24,7 @@ class FlashDataValidationException(Exception):
 
 
 MAC_ADDR_FORMAT_LEN = 17
+SCU_BL_CONFIG_JSON_FILENAME = '.config/hailo_hw_consts/scu_bl_config.json'
 
 
 class Hailo15FlashManager():
@@ -33,8 +34,9 @@ class Hailo15FlashManager():
         self.ab_offset = (self.FLASH_B_IMAGE_OFFSET - self.FLASH_A_IMAGE_OFFSET) if is_b_image else 0
 
     FLASH_OFFSET_SCU_BL = 0
-    FLASH_SECTION_SIZE_SCU_BL = 0x6000
-    FLASH_OFFSET_SCU_BL_CONFIG = 0x6000
+    FLASH_SECTION_SIZE_SCU_BL = 0x5000
+    FLASH_OFFSET_SCU_BL_CONFIG_1 = 0x5000
+    FLASH_OFFSET_SCU_BL_CONFIG_2 = 0x6000
     FLASH_SECTION_SIZE_SCU_BL_CONFIG = 0x1000
     FLASH_OFFSET_DEVICE_CONFIG = 0x7000
     FLASH_SECTION_SIZE_DEVICE_CONFIG = 0x1000
@@ -107,7 +109,7 @@ class Hailo15FlashManager():
         logger.info("Erased successfully")
         time.sleep(1)
         self._program_file(file_path, offset, raw_section_size, validate=validate, add_md5=add_md5)
-        logger.info(f"Provided file was successfully {file_path} programmed")
+        logger.info(f"Provided file {file_path} was successfully programmed")
 
     def erase_uboot_env_from_flash(self):
         logger.info("Erasing U-Boot env...")
@@ -131,18 +133,28 @@ class Hailo15FlashManager():
                                      offset=self.FLASH_OFFSET_SCU_FW,
                                      reserved_section_size=self.FLASH_SECTION_SIZE_SCU_FW, validate=validate)
 
-    def erase_and_program_scu_bl_config(self, validate=1):
+    def erase_and_program_scu_bl_config(self, file_path, validate=1):
         logger.info("Programming SCU bootloader config file...")
+        local_file_path = file_path
 
-        with tempfile.NamedTemporaryFile(suffix=".bin") as bl_config:
-            bl_config.write(struct.pack('<I', self.ab_offset))
-            bl_config.flush()
-            self.erase_and_program_flash(bl_config.name,
-                                         offset=self.FLASH_OFFSET_SCU_BL_CONFIG,
-                                         reserved_section_size=self.FLASH_SECTION_SIZE_SCU_BL_CONFIG, validate=validate)
+        # if SCU BL config does not exist, write the ab_offset value to config location for backward compatibility
+        if not os.path.exists(file_path):
+            logger.info(f"{file_path} doesn't exist, writing only offset to SCU BL config (backward compatibility)")
+            with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as scu_bl_config:
+                scu_bl_config.write(struct.pack('<I', self.ab_offset))
+                scu_bl_config.flush()
+
+                local_file_path = scu_bl_config.name
+
+        # Always program the SCU BL config file to both locations 0x5000 and 0x6000
+        self.erase_and_program_flash(local_file_path,
+                                     offset=self.FLASH_OFFSET_SCU_BL_CONFIG_1,
+                                     reserved_section_size=self.FLASH_SECTION_SIZE_SCU_BL_CONFIG, validate=validate)
+        self.erase_and_program_flash(local_file_path,
+                                     offset=self.FLASH_OFFSET_SCU_BL_CONFIG_2,
+                                     reserved_section_size=self.FLASH_SECTION_SIZE_SCU_BL_CONFIG, validate=validate)
 
     def erase_and_program_scu_bl(self, file_path, validate=1):
-        self.erase_and_program_scu_bl_config(validate=validate)
         logger.info(f"Programming SCU bootloader file: {file_path}...")
         self.erase_and_program_flash(file_path,
                                      offset=self.FLASH_OFFSET_SCU_BL,
@@ -201,9 +213,9 @@ def validate_mac_address(flash_mac_addr):
     return flash_mac_addr
 
 
-def run(scu_firmware=None, scu_bootloader=None, bootloader=None, bootloader_env=None, uboot_device_tree=None,
-        customer_cert=None, uboot_tfa=None, verify=True, uart_load=False, serial_device_name='/dev/ttyUSB3',
-        jump_to_flash=False, is_b_image=False, flash_mac_addr=None):
+def run(scu_firmware=None, scu_bootloader=None, scu_bootloader_config=None, bootloader=None, bootloader_env=None,
+        uboot_device_tree=None, customer_cert=None, uboot_tfa=None, verify=True, uart_load=False,
+        serial_device_name='/dev/ttyUSB3', jump_to_flash=False, is_b_image=False, flash_mac_addr=None):
     if uart_load:
         uart_comm = UartRecoveryCommunicator(serial_device_name)
         programmer = uart_comm.get_flash_programmer()
@@ -218,6 +230,8 @@ def run(scu_firmware=None, scu_bootloader=None, bootloader=None, bootloader_env=
         flash_manager.erase_and_program_scu_fw(scu_firmware, validate=verify)
     if scu_bootloader:
         flash_manager.erase_and_program_scu_bl(scu_bootloader, validate=verify)
+    if scu_bootloader_config:
+        flash_manager.erase_and_program_scu_bl_config(scu_bootloader_config, validate=verify)
     if bootloader:
         flash_manager.erase_and_program_uboot_spl(bootloader, validate=verify)
     # U-Boot env program must follow the uboot program
@@ -245,6 +259,10 @@ def main():
     parser.add_argument(
         '--scu-bootloader',
         help='The path to the file containing the SCU bootloader binary.')
+
+    parser.add_argument(
+        '--scu-bootloader-config',
+        help='The path to the file containing the SCU bootloader config binary.')
 
     parser.add_argument(
         '--bootloader',
@@ -282,9 +300,9 @@ def main():
 
     args = parser.parse_args()
 
-    run(args.scu_firmware, args.scu_bootloader, args.bootloader, args.bootloader_env, args.uboot_device_tree,
-        args.customer_certificate, args.uboot_tfa,  args.verify, args.uart_load, args.serial_device_name, args.b_image,
-        flash_mac_addr=args.flash_mac_addr)
+    run(args.scu_firmware, args.scu_bootloader, args.scu_bootloader_config, args.bootloader, args.bootloader_env,
+        args.uboot_device_tree, args.customer_certificate, args.uboot_tfa,  args.verify, args.uart_load,
+        args.serial_device_name, args.b_image, flash_mac_addr=args.flash_mac_addr)
 
 
 if __name__ == '__main__':

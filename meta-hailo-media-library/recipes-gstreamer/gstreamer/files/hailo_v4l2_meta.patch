@@ -1,5 +1,5 @@
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c
-index ec53bc9..c1ec126 100644
+index ec53bc9e83..c1ec126019 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c
 +++ b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2.c
 @@ -57,6 +57,7 @@
@@ -21,7 +21,7 @@ index ec53bc9..c1ec126 100644
  }
  
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c
-index d00f7a8..11a06d7 100644
+index d00f7a80dc..5f132cc772 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c
 +++ b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.c
 @@ -50,6 +50,8 @@
@@ -44,7 +44,8 @@ index d00f7a8..11a06d7 100644
  #include "gstv4l2colorbalance.h"
  #include "gstv4l2tuner.h"
  #include "gstv4l2vidorient.h"
-@@ -66,6 +72,10 @@ GST_DEBUG_CATEGORY (v4l2src_debug);
+@@ -66,7 +72,11 @@
+ GST_DEBUG_CATEGORY (v4l2src_debug);
  #define GST_CAT_DEFAULT v4l2src_debug
  
 -#define DEFAULT_PROP_DEVICE   "/dev/video0"
@@ -85,7 +86,7 @@ index d00f7a8..11a06d7 100644
    return TRUE;
  }
  
-@@ -924,6 +942,200 @@ gst_v4l2src_change_state (GstElement * element, GstStateChange transition)
+@@ -924,6 +942,210 @@ gst_v4l2src_change_state (GstElement * element, GstStateChange transition)
    return ret;
  }
  
@@ -133,6 +134,7 @@ index d00f7a8..11a06d7 100644
 +    gint isp_ae_fps;
 +    gboolean isp_ae_converged;
 +    guint8 isp_ae_average_luma;
++    GstClockTime timestamp = GST_BUFFER_TIMESTAMP(buf);
 +
 +    GstMemory *mem;
 +    GstV4l2Memory *vmem;
@@ -215,16 +217,25 @@ index d00f7a8..11a06d7 100644
 +      free(ext_ctrl.ptr);
 +    }
 +
-+    GST_DEBUG_OBJECT(v4l2src, "Got v4l2 params for index %d, vsm.x = %d , vsm.y=%d, ae_fps=%d, ae_converged=%d, ae_luma=%d",
++    GST_DEBUG_OBJECT(v4l2src, "Got v4l2 params for index %d, vsm.x = %d , vsm.y=%d, ae_fps=%d, ae_converged=%d, ae_luma=%d, timestamp=" GST_TIME_FORMAT,
 +                     v4l2_index,
 +                     vsm_params.vsm.dx,
 +                     vsm_params.vsm.dy,
 +                     isp_ae_fps,
 +                     isp_ae_converged,
-+                     isp_ae_average_luma);
++                     isp_ae_average_luma,
++                     GST_TIME_ARGS(timestamp));
++    GST_DEBUG_OBJECT(v4l2src, "ISP timestamp in ns %llu", timestamp);
 +
 +    // Add the V4L2 params to the buffer as metadata.
-+    gst_buffer_add_hailo_v4l2_meta(buf, obj->video_fd, v4l2_index, vsm_params.vsm, isp_ae_fps, isp_ae_converged, isp_ae_average_luma);
++    gst_buffer_add_hailo_v4l2_meta(buf,
++                                   obj->video_fd,
++                                   v4l2_index,
++                                   vsm_params.vsm,
++                                   isp_ae_fps,
++                                   isp_ae_converged,
++                                   isp_ae_average_luma,
++                                   timestamp);
 +    return TRUE;
 +}
 +
@@ -286,7 +297,7 @@ index d00f7a8..11a06d7 100644
  static GstFlowReturn
  gst_v4l2src_create (GstPushSrc * src, GstBuffer ** buf)
  {
-@@ -973,6 +1185,9 @@ gst_v4l2src_create (GstPushSrc * src, GstBuffer ** buf)
+@@ -973,6 +1195,9 @@ gst_v4l2src_create (GstPushSrc * src, GstBuffer ** buf)
    if (G_UNLIKELY (ret != GST_FLOW_OK))
      goto error;
  
@@ -297,7 +308,7 @@ index d00f7a8..11a06d7 100644
    duration = obj->duration;
  
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h
-index 39a5baf..481e1f8 100644
+index 39a5baf8ff..481e1f8d13 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h
 +++ b/subprojects/gst-plugins-good/sys/v4l2/gstv4l2src.h
 @@ -62,6 +62,10 @@ struct _GstV4l2Src
@@ -313,7 +324,7 @@ index 39a5baf..481e1f8 100644
  
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2.h b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2.h
 new file mode 100644
-index 0000000..e137362
+index 0000000000..e1373626f5
 --- /dev/null
 +++ b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2.h
 @@ -0,0 +1,29 @@
@@ -349,10 +360,10 @@ index 0000000..e137362
 \ No newline at end of file
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.c b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.c
 new file mode 100644
-index 0000000..edd78b6
+index 0000000000..b084908b9c
 --- /dev/null
 +++ b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.c
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,185 @@
 +/**
 + * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
 + * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
@@ -422,7 +433,7 @@ index 0000000..edd78b6
 +    gst_hailo_v4l2_meta->isp_ae_fps = HAILO_ISP_AE_FPS_DEFAULT_VALUE;
 +    gst_hailo_v4l2_meta->isp_ae_converged = HAILO_ISP_AE_CONVERGED_DEFAULT_VALUE;
 +    gst_hailo_v4l2_meta->isp_ae_average_luma = HAILO_ISP_AE_LUMA_DEFUALT_VALUE;
-+
++    gst_hailo_v4l2_meta->isp_timestamp_ns = GST_CLOCK_TIME_NONE;
 +
 +    return TRUE;
 +}
@@ -440,6 +451,7 @@ index 0000000..edd78b6
 +    gst_hailo_v4l2_meta->isp_ae_fps = HAILO_ISP_AE_FPS_DEFAULT_VALUE;
 +    gst_hailo_v4l2_meta->isp_ae_converged = HAILO_ISP_AE_CONVERGED_DEFAULT_VALUE;
 +    gst_hailo_v4l2_meta->isp_ae_average_luma = HAILO_ISP_AE_LUMA_DEFUALT_VALUE;
++    gst_hailo_v4l2_meta->isp_timestamp_ns = GST_CLOCK_TIME_NONE;
 +
 +}
 +
@@ -457,7 +469,8 @@ index 0000000..edd78b6
 +                                                                           gst_hailo_v4l2_meta->vsm,
 +                                                                           gst_hailo_v4l2_meta->isp_ae_fps,
 +                                                                           gst_hailo_v4l2_meta->isp_ae_converged,
-+                                                                           gst_hailo_v4l2_meta->isp_ae_average_luma
++                                                                           gst_hailo_v4l2_meta->isp_ae_average_luma,
++                                                                           gst_hailo_v4l2_meta->isp_timestamp_ns
 +                                                                           );
 +    if (!new_hailo_v4l2_meta)
 +    {
@@ -487,7 +500,8 @@ index 0000000..edd78b6
 +                                                 struct hailo15_vsm vsm,
 +                                                 gint isp_ae_fps,
 +                                                 gboolean isp_ae_converged,
-+                                                 guint8 isp_ae_average_luma)
++                                                 guint8 isp_ae_average_luma,
++                                                 GstClockTime isp_timestamp_ns)
 +{
 +    GstHailoV4l2Meta *gst_hailo_v4l2_meta = NULL;
 +
@@ -507,6 +521,7 @@ index 0000000..edd78b6
 +    gst_hailo_v4l2_meta->isp_ae_fps = isp_ae_fps;
 +    gst_hailo_v4l2_meta->isp_ae_converged = isp_ae_converged;
 +    gst_hailo_v4l2_meta->isp_ae_average_luma = isp_ae_average_luma;
++    gst_hailo_v4l2_meta->isp_timestamp_ns = isp_timestamp_ns;
 +
 +    return gst_hailo_v4l2_meta;
 +}
@@ -537,10 +552,10 @@ index 0000000..edd78b6
 \ No newline at end of file
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.h b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.h
 new file mode 100644
-index 0000000..49ec6d5
+index 0000000000..8996e711b8
 --- /dev/null
 +++ b/subprojects/gst-plugins-good/sys/v4l2/hailo_v4l2/hailo_v4l2_meta.h
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,56 @@
 +#pragma once
 +#include <gst/gst.h>
 +#include "hailo_v4l2.h"
@@ -572,6 +587,7 @@ index 0000000..49ec6d5
 +    gint isp_ae_fps;
 +    gboolean isp_ae_converged;
 +    guint8 isp_ae_average_luma;
++    GstClockTime isp_timestamp_ns;
 +};
 +
 +GType gst_hailo_v4l2_meta_get_type(void);
@@ -586,7 +602,8 @@ index 0000000..49ec6d5
 +                                                 struct hailo15_vsm vsm,
 +                                                 gint isp_ae_fps,
 +                                                 gboolean isp_ae_converged,
-+                                                 guint8 isp_ae_average_luma);
++                                                 guint8 isp_ae_average_luma,
++                                                 GstClockTime isp_timestamp_ns);
 +
 +GST_EXPORT
 +gboolean gst_buffer_remove_hailo_v4l2_meta(GstBuffer *buffer);
@@ -597,7 +614,7 @@ index 0000000..49ec6d5
 +G_END_DECLS
 \ No newline at end of file
 diff --git a/subprojects/gst-plugins-good/sys/v4l2/meson.build b/subprojects/gst-plugins-good/sys/v4l2/meson.build
-index 65f551f..9391faf 100644
+index 65f551fb64..9391faf05a 100644
 --- a/subprojects/gst-plugins-good/sys/v4l2/meson.build
 +++ b/subprojects/gst-plugins-good/sys/v4l2/meson.build
 @@ -33,7 +33,8 @@ v4l2_sources = [

@@ -1,6 +1,6 @@
 software =
 {
-	version = "v0.41-build-2024-05-10";
+	version = "v0.43-build-2024-07-03";
 	description = "Firmware update for Hailo SoC";
 	hardware-compatibility: [ "1.0"];
 
@@ -9,6 +9,11 @@ software =
 			images: (
 				{
 					filename = "core-image-minimal-@@MACHINE@@.ext4";
+					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p2";
+					installed-directly = true;
+				},
+				{
+					filename = "core-image-hailo-dev-@@MACHINE@@.ext4";
 					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p2";
 					installed-directly = true;
 				},
@@ -65,6 +70,11 @@ software =
 			images: (
 				{
 					filename = "core-image-minimal-@@MACHINE@@.ext4";
+					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p4";
+					installed-directly = true;
+				},
+				{
+					filename = "core-image-hailo-dev-@@MACHINE@@.ext4";
 					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p4";
 					installed-directly = true;
 				},
@@ -130,12 +140,16 @@ software =
 					device = "/dev/mtdblock0";
 					offset = "0";
 				},
-			);
-			scripts: (
 				{
-					filename = "init_scu_bl_config.sh";
-					type = "preinstall";
-				}
+					filename = "scu_bl_cfg_a.bin";
+					device = "/dev/mtdblock0";
+					offset = "0x5000";
+				},
+				{
+					filename = "scu_bl_cfg_a.bin";
+					device = "/dev/mtdblock0";
+					offset = "0x6000";
+				},
 			);
 		}
 		init-partitions-single: {
