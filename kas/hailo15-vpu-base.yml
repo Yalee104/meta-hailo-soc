@@ -15,8 +15,8 @@ local_conf_header:
   hailo15-nnc-fw: |
       CORE_IMAGE_EXTRA_INSTALL:append = " hailo15-nnc-fw"
   imx334_enable: |
-      MACHINE_FEATURES:append = " imx334"
-      MACHINE_FEATURES:remove = " imx678"
+      MACHINE_FEATURES:append = " imx678"
+      MACHINE_FEATURES:remove = " imx334"
   flags: |
       LICENSE_FLAGS_ACCEPTED:append = " commercial"
   libgsthailo: |
