@@ -16,6 +16,10 @@ do_compile:append() {
     uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o u-boot-initial-env.bin u-boot-initial-env
 }
 
+do_configure:append() {
+    sed -i "s/.*CONFIG_CORE_IMAGE_NAME.*/CONFIG_CORE_IMAGE_NAME=\"${HAILO_TARGET}\"/" ${B}/.config
+}
+
 do_install:append() {
     install -Dm 0644 ${SPL_DIR}/${SPL_NODTB_BINARY} ${D}${datadir}/${SPL_NODTB_BINARY}
 }

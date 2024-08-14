@@ -5,8 +5,8 @@ DESCRIPTION = "Media Library GStreamer plugin \
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=031eb3f48c82f13ff6cdb783af612501"
 
-SRC_URI = "git://git@github.com/hailo-ai/hailo-media-library.git;protocol=https;branch=1.4.0"
-SRCREV = "5ef459b58494e11d7c738c78b5f7317da618824f"
+SRC_URI = "git://git@github.com/hailo-ai/hailo-media-library.git;protocol=https;branch=1.4.1"
+SRCREV = "0b2de4ca02ed3cd6386bf86425a5a26ca817e2c1"
 
 RESOURCE_DIR = "${S}/resources"
 ROOTFS_HOME_DIR = "/home/root"
@@ -29,9 +29,11 @@ do_install:append() {
 # Gstreamer Dependencies
 DEPENDS:append = " glib-2.0-native glib-2.0 gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good"
 # Hailo-15 Dependencies
-DEPENDS:append = " libhailodsp libmedialib libgsthailo libhailort"
+DEPENDS:append = " libhailodsp libmedialib libgsthailo libhailort imaging-sub-system-ext"
 
 PACKAGECONFIG:append:pn-opencv = "freetype "
+
+RDEPENDS:${PN} += " imaging-sub-system-ext"
 
 FILES:${PN} += "${libdir}/gstreamer-1.0/libgstmedialib.so ${ROOTFS_APPS_DIR}/resources/*"
 FILES:${PN}-lib += "${libdir}/gstreamer-1.0/libgstmedialib.so"

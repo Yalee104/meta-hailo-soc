@@ -8,38 +8,18 @@ local_conf_header:
   gstreamer: |
     ADD_GSTREAMER_TO_IMAGE = "true"
   imx334_enable: |
-      MACHINE_FEATURES:append = " imx334"
-      MACHINE_FEATURES:remove = " imx678"
+    MACHINE_FEATURES:append = " imx334"
+    MACHINE_FEATURES:remove = " imx678"
   flags: |
-      LICENSE_FLAGS_ACCEPTED:append = " commercial"
+    LICENSE_FLAGS_ACCEPTED:append = " commercial"
   buildhistory: |
-      INHERIT += "buildhistory"
-      BUILDHISTORY_COMMIT = "1"
-  hailo-integrated-nnc: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " hailo-integrated-nnc" 
-  hailo15-nnc-fw: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " hailo15-nnc-fw"
-  libgsthailo: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " libgsthailo"
-  libhailort: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " libhailort"
-      CORE_IMAGE_EXTRA_INSTALL:append = " hailortcli"
-  tappas: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " \
-        libgsthailotools \
-        hailo-post-processes \
-        tappas-apps \
-        tappas-tracers"
-  x264: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " x264 gstreamer1.0-plugins-ugly"
-      PACKAGECONFIG:append:pn-gstreamer1.0-plugins-ugly = " x264"
-  opencv: |
-      CORE_IMAGE_EXTRA_INSTALL:append = " opencv"
+    INHERIT += "buildhistory"
+    BUILDHISTORY_COMMIT = "1"
 
 repos:
   meta-hailo:
     url: "https://github.com/hailo-ai/meta-hailo.git"
-    refspec: 5d52200a54ede32230e5edc68d42ac402beeabb4
+    refspec: kirkstone-v3.29.1
     layers:
       meta-hailo-libhailort:
       meta-hailo-vpu:

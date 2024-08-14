@@ -9,6 +9,14 @@ PACKAGEGROUP_DISABLE_COMPLEMENTARY = "1"
 PACKAGES = "packagegroup-hailo-linux \
             packagegroup-hailo-linux-dev-pkg"
 
+# Adding gstreamer to image only if env var ADD_GSTREAMER_TO_IMAGE is set to "true"
+GSTREAMER_VERSIONS = " \
+    gstreamer1.0 \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-rtsp-server"
+
 RDEPENDS:${PN} = "\
     alsa-lib \
     alsa-plugins \
@@ -24,7 +32,7 @@ RDEPENDS:${PN} = "\
     fuse-exfat \
     glibc-binary-localedata-en-us \
     gptfdisk \
-    ${@bb.utils.contains('ADD_GSTREAMER_TO_IMAGE', 'true', d.getVar('GSTREAMER_VERSIONS'), '', d)} \
+    ${@bb.utils.contains('ADD_GSTREAMER_TO_IMAGE', 'true', '${GSTREAMER_VERSIONS}', '', d)} \
     hailo-base-config \
     kmod \
     libiio \
@@ -48,6 +56,7 @@ RDEPENDS:${PN}-dev-pkg = "\
     alsa-tools \
     edac-utils \
     ethtool \
+    gdb \
     htop \
     libgpiod \
     libgpiod-tools \
@@ -57,6 +66,7 @@ RDEPENDS:${PN}-dev-pkg = "\
     linux-firmware-rtl-nic \
     lrzsz \
     nfs-utils-client \
+    ntp \
     openssh-sftp-server \
     pciutils \
     perf \
@@ -68,9 +78,15 @@ RDEPENDS:${PN}-dev-pkg = "\
     tmux \
     tcpdump \
     tree \
+    tzdata \
     usbutils \
     usbutils-dbg \
     usbutils-dev \
     usbutils-doc \
     usbutils-python \
-    vsftpd"
+    vim \
+    valgrind \
+    vsftpd \
+    xauth \
+    xeyes \
+    xhost"

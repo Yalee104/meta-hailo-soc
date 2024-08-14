@@ -6,7 +6,7 @@ inherit deploy
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://../LICENSE;md5=263ee034adc02556d59ab1ebdaea2cda"
 
-BASE_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.4.0/recovery-fw"
+BASE_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.4.1/recovery-fw"
 FW = "hailo15_uart_recovery_fw.bin"
 LICENSE_FILE = "LICENSE"
 SRC_URI = "${BASE_URI}/${FW};name=fw \
@@ -19,7 +19,7 @@ do_deploy() {
   install -m 644 -D ${WORKDIR}/${FW} ${DEPLOYDIR}/${FW}
 }
 
-PACKAGES = "${PN} ${PN}-dev"
+# Allows a creation of a package without files. If files are added, this attribute should be removed.
 ALLOW_EMPTY:${PN} = "1"
 
 addtask deploy after do_compile

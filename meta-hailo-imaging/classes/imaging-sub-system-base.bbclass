@@ -1,22 +1,4 @@
-SUMMARY = "Verisilicon vivante SW package user space code build"
-LICENSE = "MIT & Proprietary-VSI"
-LIC_FILES_CHKSUM = "file://${B}/LICENSE;md5=805d1be5d56ae9500316a754de03ab5f \
-					file://${S}/LICENSE;md5=8349eaff29531f0a3c4f4c8b31185958"
-
-INHERITS = "externalsrc ccache"
-RDEPENDS_IMAGING_SUB_SYSTEM = ""
-DEPENDS_IMAGING_SUB_SYSTEM = "libdrm"
-
-inherit ${INHERITS}
-
-RDEPENDS:${PN} += "${RDEPENDS_IMAGING_SUB_SYSTEM}"
-DEPENDS += "${DEPENDS_IMAGING_SUB_SYSTEM}"
-
-SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.4.0/imaging-sub-system.tar.gz"
-SRC_URI[sha256sum] = "223adabe068921e2220260ce7c0b3aedbde1e7aefe83f640247af5844ba9f3c3"
-
-B = "${WORKDIR}/imaging-sub-system/build"
-S = "${WORKDIR}/imaging-sub-system/scripts"
+# imaging-sub-system base class - setting the code flow of imaging-sub-system installation. Allows recipes that inherits it to expand its functionality as needed
 
 LIBS_FILES_TO_COPY ?= ""
 
@@ -25,15 +7,8 @@ copy_lib_files() {
 	cp -R --no-dereference --preserve=mode,links -v ${B}/dist/release/lib/*${LIBS_FILES_TO_COPY} ${D}/lib
 }
 
-copy_lib_files() {
-    cp -R --no-dereference --preserve=mode,links -v ${B}/dist/lib/*${LIBS_FILES_TO_COPY} ${D}/lib
-	cp -R --no-dereference --preserve=mode,links -v ${B}/dist/release/lib/*${LIBS_FILES_TO_COPY} ${D}/lib
-}
-
 install_isp_media_server() {
-
 	install -m 0755 -D  ${B}/dist/release/bin/isp_media_server ${D}${bindir}
-
 	install -m 0755 -D  ${S}/hailo_cfg/isp_media_server ${D}/etc/init.d
 	ln -s -r ${D}/etc/init.d/isp_media_server ${D}/etc/rc5.d/S20isp_media_server
 }
@@ -45,6 +20,9 @@ install_dist() {
 	install -m 0755 -D  ${B}/dist/bin/*.so ${D}${bindir}
 	install -m 0755 -D  ${B}/dist/release/bin/*.json ${D}${bindir}
 	install -m 0755 -D  ${B}/dist/release/bin/*.cfg ${D}${bindir}
+	install -m 0755 -D  ${B}/dist/bin/raw_image_capture ${D}${bindir}
+	install -m 0755 -D  ${B}/dist/bin/hailo_ctrl ${D}${bindir}
+	install -m 0755 -D  ${S}/units/hailo/hdr_lib/hefs/hdr*.hef ${D}${bindir}
 }
 
 link_drivers() {

@@ -13,23 +13,20 @@ PACKAGES = "\
 RDEPENDS:${PN} = "\
     glib-2.0 \
     gstreamer1.0 \
-    gstreamer1.0-libav \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
     libmedialib-api \
-    libgstmedialib \
-    xauth \
-    xeyes \
-    xhost"
+    libgstmedialib"
 
 RDEPENDS:${PN}-dev-pkg = "\
     packagegroup-hailo-media-library \
     gdb \
     gst-instruments \
+    gstreamer1.0-libav \
     gstreamer1.0-plugins-ugly \
     htop \
-    perf \
     tmux \
+    ulimit \
     vim \
     x264"

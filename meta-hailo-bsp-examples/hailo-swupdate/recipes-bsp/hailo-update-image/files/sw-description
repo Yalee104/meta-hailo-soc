@@ -1,6 +1,6 @@
 software =
 {
-	version = "v0.43-build-2024-07-03";
+	version = "bkc-build-2024-08-11";
 	description = "Firmware update for Hailo SoC";
 	hardware-compatibility: [ "1.0"];
 
@@ -8,12 +8,7 @@ software =
 		copy-a: {
 			images: (
 				{
-					filename = "core-image-minimal-@@MACHINE@@.ext4";
-					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p2";
-					installed-directly = true;
-				},
-				{
-					filename = "core-image-hailo-dev-@@MACHINE@@.ext4";
+					filename = "@@HAILO_TARGET@@-@@MACHINE@@.ext4";
 					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p2";
 					installed-directly = true;
 				},
@@ -69,12 +64,7 @@ software =
 		copy-b: {
 			images: (
 				{
-					filename = "core-image-minimal-@@MACHINE@@.ext4";
-					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p4";
-					installed-directly = true;
-				},
-				{
-					filename = "core-image-hailo-dev-@@MACHINE@@.ext4";
+					filename = "@@HAILO_TARGET@@-@@MACHINE@@.ext4";
 					device = "/dev/mmcblk@@SWUPDATE_MMC_INDEX@@p4";
 					installed-directly = true;
 				},
