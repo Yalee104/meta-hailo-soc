@@ -2,14 +2,6 @@ header:
   version: 11
 distro: poky
 
-target:
-  - core-image-minimal
-  - hailo-update-image
-
-local_conf_header:
-  qt5: |
-    CORE_IMAGE_EXTRA_INSTALL:append = " qtbase"
-
 repos:
   meta-openembedded:
     url: "https://git.openembedded.org/meta-openembedded"
@@ -39,9 +31,3 @@ repos:
     layers:
       meta-arm-toolchain:
       meta-arm:
-
-  meta-qt5:
-    url: "https://github.com/meta-qt5/meta-qt5.git"
-    refspec: kirkstone
-    layers:
-      .:

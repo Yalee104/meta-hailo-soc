@@ -19,11 +19,8 @@ RDEPENDS:${PN} = "\
 
 RDEPENDS:${PN}-dev-pkg = "\
     ${MUTUAL_IMAGING_RDEPENDS} \
-    qtbase \
     imaging-sub-system-ext \
-    xauth \
-    xeyes \
-    xhost"
+    qtbase"
 
 RDEPENDS:packagegroup-core-buildessential:append = "\
     kernel-module-cdns-csi2rx \
