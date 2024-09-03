@@ -8,8 +8,8 @@ local_conf_header:
   gstreamer: |
     ADD_GSTREAMER_TO_IMAGE = "true"
   imx334_enable: |
-    MACHINE_FEATURES:append = " imx334"
-    MACHINE_FEATURES:remove = " imx678"
+    MACHINE_FEATURES:append = " imx678"
+    MACHINE_FEATURES:remove = " imx334"
   flags: |
     LICENSE_FLAGS_ACCEPTED:append = " commercial"
   buildhistory: |

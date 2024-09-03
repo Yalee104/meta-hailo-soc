@@ -1,0 +1,10 @@
+build_system: openembedded
+header:
+  version: 11
+  includes:
+  - hailo15-dev.yml
+  - hailo15-greenbase-sbc-machine.yml
+repos: 
+  meta-greenbase:
+    layers:
+      meta-greenbase:
