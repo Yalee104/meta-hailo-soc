@@ -12,7 +12,7 @@ RDEPENDS:${PN} += "${RDEPENDS_IMAGING_SUB_SYSTEM}"
 DEPENDS += "${DEPENDS_IMAGING_SUB_SYSTEM}"
 
 SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.4.2/imaging-sub-system.tar.gz"
-SRC_URI[sha256sum] = "c142daa401deccb00181c0c068be2b5d20ead181a7e6499a656ad9d4f707d7a5"
+SRC_URI[sha256sum] = "34acb159f3042094f39230c85fe3dc59ae65dc8691a8d9798d4f191640a13e1c"
 
 B = "${WORKDIR}/imaging-sub-system/build"
 S = "${WORKDIR}/imaging-sub-system/scripts"
