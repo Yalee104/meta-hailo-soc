@@ -27,6 +27,7 @@ class Scu_bl_boot_image_source(Enum):
 class Scu_bl_boot_image_mode(Enum):
     BOOT_IMAGE_MODE_NORMAL = ("normal", 0)
     BOOT_IMAGE_MODE_REMOTE_UPDATE = ("remote_update", 1)
+    BOOT_IMAGE_MODE_MAX = ("image_mode_max", 7)
 
   
 class Image_descriptor_C_struct(ctypes.Structure):
@@ -186,6 +187,8 @@ def main():
         help='The path to bin file to create.')
 
     args = parser.parse_args()
+
+    print(f"scu_bootloader_config_manager.py - {args.scu_bl_cfg_json}, {args.scu_bl_cfg_bin}")
 
     run(args.scu_bl_cfg_json, args.scu_bl_cfg_bin)
 

@@ -7,9 +7,6 @@ inherit deploy hailo-cc312-sign
 SRC_URI = "file://u-boot-tfa.its \
 	   file://COPYING.MIT"
 
-HAILO_CC312_SIGNED_BINARY = "${B}/u-boot-spl.bin"
-HAILO_CC312_UNSIGNED_BINARY = "${STAGING_DATADIR}/u-boot-spl-nodtb.bin"
-
 DEPENDS += " dtc-native u-boot-tools-native u-boot"
 do_compile[depends] += " u-boot:do_deploy trusted-firmware-a-hailo:do_deploy hailo-secureboot-assets:do_deploy"
 
@@ -20,7 +17,7 @@ do_compile() {
     # sign u-boot-tfa with customer key
     uboot-mkimage -F -k ${SPL_SIGN_KEYDIR} -r ${B}/u-boot-tfa.itb
     # sign u-boot-spl-nodtb.bin, generate u-boot-spl.bin
-    do_hailo_cc312_sign
+    hailo15_boot_image_sign ${STAGING_DATADIR}/u-boot-spl-nodtb.bin image ${B}/u-boot-spl.bin
 }
 
 do_deploy() {

@@ -9,21 +9,12 @@ PACKAGEGROUP_DISABLE_COMPLEMENTARY = "1"
 PACKAGES = "packagegroup-hailo-imaging \
             packagegroup-hailo-imaging-dev-pkg"
 
-MUTUAL_IMAGING_RDEPENDS = "\
-    video-encoder \
-    video-encoder-kernel-modules"
-
 RDEPENDS:${PN} = "\
-    ${MUTUAL_IMAGING_RDEPENDS} \
     imaging-sub-system"
 
 RDEPENDS:${PN}-dev-pkg = "\
-    ${MUTUAL_IMAGING_RDEPENDS} \
-    qtbase \
     imaging-sub-system-ext \
-    xauth \
-    xeyes \
-    xhost"
+    qtbase"
 
 RDEPENDS:packagegroup-core-buildessential:append = "\
     kernel-module-cdns-csi2rx \
@@ -35,4 +26,5 @@ RDEPENDS:packagegroup-core-buildessential:append = "\
     kernel-module-hailo15-video-out \
     kernel-module-imx334 \
     kernel-module-imx675 \
-    kernel-module-imx678"
+    kernel-module-imx678 \
+    kernel-module-imx715"

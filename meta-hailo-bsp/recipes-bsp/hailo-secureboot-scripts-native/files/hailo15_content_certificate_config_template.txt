@@ -1,0 +1,8 @@
+[CNT-CFG]
+load-verify-scheme=2
+crypto-type=0
+aes-ce-id=0
+nvcounter-val=0
+cert-keypair=${cert_keypair}
+images-table=${images_table}
+cert-pkg=${content_certificate}

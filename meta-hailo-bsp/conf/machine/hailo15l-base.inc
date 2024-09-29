@@ -1,8 +1,4 @@
-MACHINEOVERRIDES =. "hailo15l:"
+HAILO_HOST_NAME = "hailo15l"
+MACHINEOVERRIDES =. "${HAILO_HOST_NAME}:"
 
-require hailo15-family-base.inc
-
-hostname:pn-base-files = "hailo15l"
-
-SCU_FW_MACHINE = "hailo15l"
-SCU_BL_MACHINE = "hailo15l"
+require hailo15-base.inc

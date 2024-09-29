@@ -3,6 +3,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI += " file://hailo15_i2s_master_asound.conf"
 ASOUND_STATE_FILES:append:hailo15-evb = " hailo15_evb_asound.state"
 ASOUND_STATE_FILES:append:hailo15-sbc = " hailo15_sbc_asound.state"
+ASOUND_STATE_FILES:append:hailo15l-sbc = " hailo15l_sbc_asound.state"
 
 asound_state_dir = "/var/lib/alsa"
 

@@ -2,7 +2,7 @@ import serial
 import time
 import ctypes
 import argparse
-from hailo15_board_tools.flash_programmers.uart_recovery_manager import UartRecoveryCommunicator
+from hailo15_board_tools.storage_programmers.uart_recovery_manager import UartRecoveryCommunicator
 
 UART_BAUDRATE = 57600
 UART_TIMEOUT = 2  # seconds
@@ -16,6 +16,7 @@ MAX_CODE_RAM_SIZE = 0x50000
 MAX_KEY_CERTIFICATE_SIZE = 0x690
 MAX_CONTENT_CERTIFICATE_SIZE = 0x5F0
 FIRMWARE_HEADER_MAGIC_HAILO15 = 0xE905DAAB
+FIRMWARE_HEADER_MAGIC_HAILO15l = 0xF94739AB
 FIRMWARE_HEADER_VERSION_INITIAL = 0
 SLEEP_TIME_INSTEAD_READ_SECOND = 0.1
 SLEEP_TIME_AFTER_BOOT_SECOND = 2
@@ -141,7 +142,8 @@ class UartBootFWLoader():
 
         firmware_header_struct = FirmwareHeaderStruct.from_buffer_copy(firmware_header_bin)
 
-        if FIRMWARE_HEADER_MAGIC_HAILO15 != firmware_header_struct.magic:
+        if ((FIRMWARE_HEADER_MAGIC_HAILO15 != firmware_header_struct.magic) and
+           (FIRMWARE_HEADER_MAGIC_HAILO15l != firmware_header_struct.magic)):
             raise InputException("Incorrect firmware header magic")
         if FIRMWARE_HEADER_VERSION_INITIAL != firmware_header_struct.header_version:
             raise InputException("Incorrect firmware header version")
@@ -150,8 +152,8 @@ class UartBootFWLoader():
 
         code_size = firmware_header_struct.code_size
 
-        print(f"UART recovery firmware version which is now loaded: {firmware_header_struct.firmware_major}.\
-{firmware_header_struct.firmware_minor}")
+        print("UART recovery firmware version which is now loaded: "
+              f"{firmware_header_struct.firmware_major}.{firmware_header_struct.firmware_minor}")
 
         firmware_code = firmware_binary_bin[header_size:(header_size + code_size)]
 
@@ -185,13 +187,16 @@ class UartBootFWLoader():
         return firmware_header_bin, firmware_code, key_certificate_bin, content_certificate_bin
 
 
-def run(firmware, is_secure_chip=True, serial_device_name='/dev/ttyUSB3'):
+def run(firmware, is_secure_chip=True, serial_device_name='/dev/ttyUSB3', programmer=None):
     uart_boot_fw_loader = UartBootFWLoader(is_secure_chip, serial_device_name)
     uart_boot_fw_loader.load_file(firmware)
     time.sleep(1)
-    uart_comm = UartRecoveryCommunicator(serial_device_name)
-    programmer = uart_comm.get_flash_programmer()
+    if (programmer is None):
+        # since we only check fw was loaded, it doesn't matter if we use flash/emmc programmer
+        uart_comm = UartRecoveryCommunicator(serial_device_name)
+        programmer = uart_comm.get_flash_programmer()
     programmer.open_interface()
+    programmer.identify()
 
 
 def main():
@@ -206,8 +211,12 @@ def main():
 
     args = parser.parse_args()
 
+    # since we only check fw was loaded, it doesn't matter if we use flash/emmc programmer
+    uart_comm = UartRecoveryCommunicator(args.serial_device_name)
+    programmer = uart_comm.get_flash_programmer()
+
     try:
-        run(args.firmware, args.is_secure_chip, args.serial_device_name)
+        run(args.firmware, args.is_secure_chip, args.serial_device_name, programmer)
     except Exception as e:
         print(f"Error: {e}")
     else:

@@ -1,17 +1,17 @@
 #!/bin/bash
 
-base=/sys/devices/hailo_ddr_pmu
+base=/sys/devices/hailo_noc_pmu
 
 # Used externally
-counter0=/sys/devices/hailo_ddr_pmu/counter0
-counter1=/sys/devices/hailo_ddr_pmu/counter1
-counter2=/sys/devices/hailo_ddr_pmu/counter2
-counter3=/sys/devices/hailo_ddr_pmu/counter3
+counter0=$base/counter0
+counter1=$base/counter1
+counter2=$base/counter2
+counter3=$base/counter3
 
 # $1: sample period in microseconds
 # $2: running mode (0 (periodic) or 1 (accumulated))
 # $3: output filename
-ddr_measure() {
+noc_measure() {
     if [ -n "$1" ]; then
         sample_time_us=",sample_time_us=$1"
     fi
@@ -23,7 +23,7 @@ ddr_measure() {
         output=$3
     fi
     echo "Starting measurement, press Ctrl+C to stop"
-    perf record -a -e hailo_ddr_pmu/hailo_ddr_bw$sample_time_us$running_mode/
+    perf record -a -e hailo_noc_pmu/hailo_noc_bw$sample_time_us$running_mode/
     perf script > $output
 }
 
@@ -31,7 +31,7 @@ ddr_measure() {
 # $1: sample period in microseconds
 # $3: running mode (0 (periodic) or 1 (accumulated))
 # $4: output filename
-ddr_measure_sleep() {
+noc_measure_sleep() {
     sleeptime=10
     if [ -n "$1" ]; then
         sleeptime=$1
@@ -47,7 +47,7 @@ ddr_measure_sleep() {
         output=$4
     fi
     echo "Starting measurement for $sleeptime seconds, press Ctrl+C to stop"
-    perf record -a -e hailo_ddr_pmu/hailo_ddr_bw$sample_time_us$running_mode/ sleep $sleeptime
+    perf record -a -e hailo_noc_pmu/hailo_noc_bw$sample_time_us$running_mode/ sleep $sleeptime
     perf script > $output
 }
 
@@ -55,7 +55,7 @@ ddr_measure_sleep() {
 # $2: sample period in microseconds
 # $3: running mode (0 (periodic) or 1 (accumulated))
 # $4: output filename
-ddr_measure_command() {
+noc_measure_command() {
     if [ -n "$2" ]; then
         if ! [[ $2 =~ ^[0-9]+$ ]]; then
             echo "Invalid sample time: $2" >> /dev/stderr
@@ -76,7 +76,7 @@ ddr_measure_command() {
         output=$4
     fi
     echo "Starting measurement for \"$1\", press Ctrl+C to stop"
-    perf record -a -e hailo_ddr_pmu/hailo_ddr_bw$sample_time_us$running_mode/ $1
+    perf record -a -e hailo_noc_pmu/hailo_noc_bw$sample_time_us$running_mode/ $1
     perf script > $output
 }
 
@@ -133,7 +133,7 @@ declare -A FILTER_ROUTE_BASES=(
 
 ROUTE_MASK=0x1f8000
 
-__ddr_check_counter_number() {
+__noc_check_counter_number() {
     if ! [[ $1 =~ ^[0-3]$ ]]; then
         echo "Invalid counter number: $1" >> /dev/stderr
         echo "Valid counter numbers are: 0 1 2 3" >> /dev/stderr
@@ -142,21 +142,21 @@ __ddr_check_counter_number() {
 }
 
 # $1: counter number (0-3)
-ddr_enable_counter() {
-    __ddr_check_counter_number $1 || return 1
+noc_enable_counter() {
+    __noc_check_counter_number $1 || return 1
     echo "1" > $base/counter$1/enabled
 }
 
 # $1: counter number (0-3)
-ddr_disable_counter() {
-    __ddr_check_counter_number $1 || return 1
+noc_disable_counter() {
+    __noc_check_counter_number $1 || return 1
     echo "0" > $base/counter$1/enabled
 }
 
 # $1: counter number (0-3)
-ddr_reset_counter_config() {
-    __ddr_check_counter_number $1 || return 1
-    ddr_disable_counter $1
+noc_reset_counter_config() {
+    __noc_check_counter_number $1 || return 1
+    noc_disable_counter $1
     counter=$base/counter$1
 
     echo "filter" > $counter/mode
@@ -172,20 +172,20 @@ ddr_reset_counter_config() {
 }
 
 # $1: counter number (0-3)
-ddr_set_counter_total() {
-    __ddr_check_counter_number $1 || return 1
+noc_set_counter_total() {
+    __noc_check_counter_number $1 || return 1
     counter=$base/counter$1
     echo "total" > $counter/mode
-    ddr_enable_counter $1
+    noc_enable_counter $1
 }
 
 # $1: counter number (0-3)
 # $2: filter name
 # $3: opcode (optional)
-ddr_set_counter_filter() {
-    __ddr_check_counter_number $1 || return 1
+noc_set_counter_filter() {
+    __noc_check_counter_number $1 || return 1
 
-    ddr_reset_counter_config $1
+    noc_reset_counter_config $1
     counter=$base/counter$1
 
     route_base=${FILTER_ROUTE_BASES[$2]}
@@ -220,23 +220,23 @@ ddr_set_counter_filter() {
         esac
     fi
 
-    ddr_enable_counter $1
+    noc_enable_counter $1
 }
 
-ddr_enable_csm() {
+noc_enable_csm() {
     echo "1" > $base/csm/enabled
 }
 
-ddr_disable_csm() {
+noc_disable_csm() {
     echo "0" > $base/csm/enabled
 }
 
-ddr_enable_dsm() {
+noc_enable_dsm() {
     echo "1" > $base/dsm_rx/enabled
     echo "1" > $base/dsm_tx/enabled
 }
 
-ddr_disable_dsm() {
+noc_disable_dsm() {
     echo "0" > $base/dsm_rx/enabled
     echo "0" > $base/dsm_tx/enabled
 }

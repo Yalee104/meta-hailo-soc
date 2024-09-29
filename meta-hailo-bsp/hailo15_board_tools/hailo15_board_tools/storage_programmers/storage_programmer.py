@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 import logging
 import sys
 
-logger = logging.getLogger("BURN_FLASH_HAILO15_LOGGER")
+logger = logging.getLogger("BURN_STORAGE_HAILO15_LOGGER")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
-class FlashProgrammer(ABC):
+class StorageProgrammer(ABC):
 
     @abstractmethod
     def write(self, address, buffer_data):

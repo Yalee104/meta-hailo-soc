@@ -11,5 +11,6 @@ IMAGE_INSTALL = "\
     e2fsprogs-resize2fs \
     init-ifupdown \
     virtual/initscripts-hailo-swupdate \
+    run-swupdate-script \
 "
 IMAGE_FSTYPES = "ext4.gz"
