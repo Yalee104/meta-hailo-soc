@@ -10,6 +10,8 @@ SENSOR_CONF_FILES:append:hailo15-sbc = " hailo15-sbc/tmp175-i2c-1.conf"
 SENSOR_CONF_FILES:append:hailo15-evb = " hailo15-evb/ina231_precise-i2c-1.conf"
 SENSOR_CONF_FILES:append:hailo15-evb = " hailo15-evb/tmp175-i2c-1.conf"
 SENSOR_CONF_FILES:append:hailo10-m2 = " hailo10-m2/ina231_precise-i2c-1.conf"
+SENSOR_CONF_FILES:append:hailo15l-sbc = " hailo15l-sbc/ina231_precise-i2c-1.conf"
+SENSOR_CONF_FILES:append:hailo15l-sbc = " hailo15l-sbc/tmp175-i2c-1.conf"
 SENSOR_CONF_FILES:append = " hailo15-scmi.conf"
 
 python () {

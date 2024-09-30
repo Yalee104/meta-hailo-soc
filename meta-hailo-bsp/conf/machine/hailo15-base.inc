@@ -1,6 +1,8 @@
 require hailo15-family-base.inc
 
-hostname:pn-base-files = "hailo15"
+HAILO_HOST_NAME ??= "hailo15"
+hostname:pn-base-files = "${HAILO_HOST_NAME}"
 
-SCU_FW_MACHINE = "hailo15"
-SCU_BL_MACHINE = "hailo15"
+SCU_FW_MACHINE = "${HAILO_HOST_NAME}"
+SCU_BL_MACHINE = "${HAILO_HOST_NAME}"
+RECOVERY_FW_MACHINE = "${HAILO_HOST_NAME}"

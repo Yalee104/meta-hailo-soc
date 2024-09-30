@@ -1,8 +1,8 @@
 import argparse
 
 from hailo15_board_tools.hailo15_spi_flash_program import Hailo15FlashManager
-from hailo15_board_tools.flash_programmers.uart_recovery_manager import UartRecoveryCommunicator
-from hailo15_board_tools.flash_programmers.ftdi_flash_programmer import FtdiFlashProgrammer
+from hailo15_board_tools.storage_programmers.uart_recovery_manager import UartRecoveryCommunicator
+from hailo15_board_tools.storage_programmers.ftdi_flash_programmer import FtdiFlashProgrammer
 
 
 def convert_file_size_to_int(file_size):
@@ -41,8 +41,9 @@ def main():
     flash_manager = Hailo15FlashManager(programmer)
 
     flash_manager.programmer.open_interface()
+    flash_manager.programmer.identify()
 
-    flash_manager.erase_and_program_flash(args.file, args.offset, file_size, args.verify)
+    flash_manager.program_storage(args.file, args.offset, file_size, args.verify)
 
 
 if __name__ == '__main__':

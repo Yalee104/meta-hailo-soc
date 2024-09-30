@@ -11,6 +11,23 @@ function exit_trap() {
     sleep 3
 }
 
+# This function, called after swupdate finished, updates scu_bl_cfg file with boot_image_mode field set to 0
+function post_swupdate_modify_scu_bl_cfg_bin()
+{ 
+    current_copy=$(/etc/get_sw_image.sh --next)
+
+    # handling of boot_image_mode is only relevant to image a
+    if [ "${current_copy}" = "a" ]; then
+        scu_bl_cfg_filename="/etc/scu_bl_cfg/scu_bl_cfg_a.bin"
+
+        # Write to offset 0x5000 the original SCU bootloader configuration - which has boot_image_mode field set to 0 - 
+        dd if=${scu_bl_cfg_filename} of=/dev/mtdblock0 bs=4096 count=1 seek=5 2>/dev/null
+
+        # Write to offset 0x6000 the original SCU bootloader configuration - which has boot_image_mode field set to 0 - 
+        dd if=${scu_bl_cfg_filename} of=/dev/mtdblock0 bs=4096 count=1 seek=6 2>/dev/null
+    fi
+}
+
 function run_swupdate() {
     cd /tmp
     echo "Downloading ${SWUPDATE_UPDATE_FILENAME} from ${SWUPDATE_SERVER_IP} via TFTP..."
@@ -27,6 +44,8 @@ function run_swupdate() {
     done
     echo "SWUpdate finished"
 
+    post_swupdate_modify_scu_bl_cfg_bin
+
     echo "Rebooting..."
     reboot -f
 
@@ -37,7 +56,7 @@ function main() {
     umask 022
     mount -t proc proc /proc
     mount -t sysfs sysfs /sys
-    mount -t tmpfs tmpfs /tmp
+    mount -o size=4G -t tmpfs tmpfs /tmp
     # disable kernel print to serial
     echo 0 >/proc/sys/kernel/printk
 

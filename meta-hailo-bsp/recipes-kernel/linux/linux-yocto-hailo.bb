@@ -9,15 +9,14 @@ LINUX_VERSION = "5.15.32"
 PV = "${LINUX_VERSION}"
 
 LINUX_YOCTO_HAILO_URI ??= "git@github.com/hailo-ai/linux-yocto-hailo.git"
-LINUX_YOCTO_HAILO_BRANCH ??= "1.4.0"
-LINUX_YOCTO_HAILO_SRCREV ??= "c070852f720e643fc0f1a7b014b431ca7355954e"
+LINUX_YOCTO_HAILO_BRANCH ??= "1.5.0"
+LINUX_YOCTO_HAILO_SRCREV ??= "0baac6f43527cff8f4c92ed50c039c7b43bde722"
 LINUX_YOCTO_HAILO_BOARD_VENDOR ?= "hailo"
 
 KBRANCH = "${LINUX_YOCTO_HAILO_BRANCH}"
 SRCREV = "${LINUX_YOCTO_HAILO_SRCREV}"
 
-HAILO_CC312_SIGNED_BINARY = "${B}/${UBOOT_DTB_BINARY}.signed"
-HAILO_CC312_UNSIGNED_BINARY = "${B}/${UBOOT_DTB_BINARY}"
+SIGNED_UBOOT_DTB = "${B}/${UBOOT_DTB_BINARY}.signed"
 
 SRC_URI = "git://${LINUX_YOCTO_HAILO_URI};protocol=https;branch=${KBRANCH} \
            file://defconfig \
@@ -37,11 +36,11 @@ do_assemble_fitimage[depends] += "hailo-secureboot-assets:do_deploy"
 
 do_assemble_fitimage:append() {
     # sign u-boot.dtb, generate u-boot.dtb.signed
-    do_hailo_cc312_sign
+    hailo15_boot_image_sign ${B}/${UBOOT_DTB_BINARY} devicetree ${SIGNED_UBOOT_DTB}
 }
 
 kernel_do_deploy:append() {
-    install -m 0644 ${HAILO_CC312_SIGNED_BINARY} ${DEPLOYDIR}/
+    install -m 0644 ${SIGNED_UBOOT_DTB} ${DEPLOYDIR}/
 }
 
 require recipes-kernel/linux/linux-yocto.inc

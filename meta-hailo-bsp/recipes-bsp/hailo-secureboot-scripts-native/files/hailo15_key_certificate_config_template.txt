@@ -1,0 +1,6 @@
+[KEY-CFG]
+hbk-id=${hbk_id}
+nvcounter-val=0
+cert-keypair=${rot_keypair}
+next-cert-pubkey=${content_pubkey}
+cert-pkg=${cert_package_name}

@@ -8,92 +8,22 @@ import argparse
 import hashlib
 import os
 import time
-import subprocess
-import tempfile
-import struct
-import re
-from contextlib import contextmanager
 
-from hailo15_board_tools.flash_programmers.flash_programmer import FlashProgrammer, logger
-from hailo15_board_tools.flash_programmers.uart_recovery_manager import UartRecoveryCommunicator
-from hailo15_board_tools.flash_programmers.ftdi_flash_programmer import FtdiFlashProgrammer
+from hailo15_board_tools.storage_programmers.storage_programmer import StorageProgrammer, logger
+from hailo15_board_tools.storage_programmers.storage_manager import (StorageManager, validate_mac_address,
+                                                                     StorageDataValidationException)
+from hailo15_board_tools.storage_programmers.uart_recovery_manager import UartRecoveryCommunicator
+from hailo15_board_tools.storage_programmers.ftdi_flash_programmer import FtdiFlashProgrammer
 
 
-class FlashDataValidationException(Exception):
-    pass
+class Hailo15FlashManager(StorageManager):
 
-
-MAC_ADDR_FORMAT_LEN = 17
-SCU_BL_CONFIG_JSON_FILENAME = '.config/hailo_hw_consts/scu_bl_config.json'
-
-
-class Hailo15FlashManager():
-
-    def __init__(self, programmer: FlashProgrammer, is_b_image: bool = False):
+    def __init__(self, programmer: StorageProgrammer, is_b_image: bool = False):
         self.programmer = programmer
-        self.ab_offset = (self.FLASH_B_IMAGE_OFFSET - self.FLASH_A_IMAGE_OFFSET) if is_b_image else 0
+        self.ab_offset = (self.STORAGE_B_IMAGE_OFFSET - self.STORAGE_A_IMAGE_OFFSET) if is_b_image else 0
 
-    FLASH_OFFSET_SCU_BL = 0
-    FLASH_SECTION_SIZE_SCU_BL = 0x5000
-    FLASH_OFFSET_SCU_BL_CONFIG_1 = 0x5000
-    FLASH_OFFSET_SCU_BL_CONFIG_2 = 0x6000
-    FLASH_SECTION_SIZE_SCU_BL_CONFIG = 0x1000
-    FLASH_OFFSET_DEVICE_CONFIG = 0x7000
-    FLASH_SECTION_SIZE_DEVICE_CONFIG = 0x1000
-    FLASH_OFFSET_SCU_FW = 0x8000
-    FLASH_SECTION_SIZE_SCU_FW = 0x38000
-    FLASH_OFFSET_UBOOT_DEVICE_TREE = 0x40000
-    FLASH_SECTION_SIZE_UBOOT_DEVICE_TREE = 0xF000
-    FLASH_OFFSET_CUSTOMER_CERTIFICATE = 0x4F000
-    FLASH_SECTION_SIZE_CUSTOMER_CERTIFICATE = 0x1000
-    FLASH_OFFSET_SPL_UBOOT_BIN = 0x54000
-    FLASH_SECTION_SIZE_UBOOT_SPL = 0x2C000
-    FLASH_OFFSET_UBOOT_ENV = 0x50000
-    FLASH_SECTION_SIZE_UBOOT_ENV = 0x4000
-    # if working with a/b - notice to change FLASH_B_IMAGE_OFFSET as well
-    FLASH_OFFSET_UBOOT_TFA = 0x80000
-    FLASH_SECTION_SIZE_UBOOT_TFA = 0x100000  # 1024 KB
-
-    FLASH_B_IMAGE_OFFSET = 0x80000
-    FLASH_A_IMAGE_OFFSET = 0x8000
-
-    def _program_file(self, file_path, offset, section_size, validate, add_md5=False):
-        """ This function programs a given file to the SPI flash
-
-        Args:
-            file_path (str): The file path to program to the SPI flash
-            offset (hex): The start offset in the SPI flash
-            section_size (hex): The section size of the given file
-            validate (bool, optional): Whether to validate content has been programmed successfully . Defaults to True.
-            add_md5 (bool, optional): Whether to add md5 to the end of the file. Defaults to False.
-
-        Raises:
-            FlashDataValidationException: raise if validation failed or the file is larger than the section size
-            SerialFlashValueError: raise if trying to write in address larger than flash (by write function)
-        """
-        data_to_write = None
-        with open(file_path, 'rb') as input_file:
-            data_to_write = input_file.read()
-
-        if add_md5:
-            md5 = hashlib.md5()
-            md5.update(data_to_write)
-            data_to_write = b''.join([data_to_write, md5.digest()])
-
-        if section_size < len(data_to_write):
-            raise FlashDataValidationException("Provided file is larger than expected")
-
-        self.programmer.write(offset, data_to_write)
-
-        if validate:
-            read_data = self.programmer.read(offset, len(data_to_write))
-            if read_data != data_to_write:
-                raise FlashDataValidationException("Flash was not programmed successfully")
-            else:
-                logger.info('Flash program validatation passed successfully')
-
-    def erase_and_program_flash(self, file_path, offset, reserved_section_size, validate, add_md5=False):
-        if offset >= self.FLASH_A_IMAGE_OFFSET:
+    def program_storage(self, file_path, offset, reserved_section_size, validate, add_md5=False):
+        if offset >= self.STORAGE_A_IMAGE_OFFSET:
             offset += self.ab_offset
 
         raw_section_size = os.path.getsize(file_path)
@@ -101,7 +31,7 @@ class Hailo15FlashManager():
             raw_section_size += hashlib.md5().digest_size
 
         if reserved_section_size < raw_section_size:
-            raise FlashDataValidationException("Provided file is larger than expected")
+            raise StorageDataValidationException("Provided file is larger than expected")
 
         logger.info(f"Erasing flash from {hex(offset)} B to {hex(offset + raw_section_size)} B...")
         # Erase function validates that offset and section size are inbounds of flash device
@@ -114,103 +44,8 @@ class Hailo15FlashManager():
     def erase_uboot_env_from_flash(self):
         logger.info("Erasing U-Boot env...")
         # Erase function validates that offset and section size are inbounds of flash device
-        self.programmer.erase(self.FLASH_OFFSET_UBOOT_ENV, self.FLASH_SECTION_SIZE_UBOOT_ENV)
+        self.programmer.erase(self.STORAGE_OFFSET_UBOOT_ENV, self.STORAGE_SECTION_SIZE_UBOOT_ENV)
         time.sleep(1)
-
-    def erase_and_program_device_mac_config(self, flash_mac_addr, validate=1):
-        logger.info("Programming Mac address {}".format(flash_mac_addr))
-        with tempfile.NamedTemporaryFile(suffix=".bin") as mac_config:
-            mac_bytes = bytes.fromhex(flash_mac_addr.replace(':', ''))
-            mac_config.write(mac_bytes)
-            mac_config.flush()
-            self.erase_and_program_flash(mac_config.name,
-                                         offset=self.FLASH_OFFSET_DEVICE_CONFIG,
-                                         reserved_section_size=self.FLASH_SECTION_SIZE_DEVICE_CONFIG, validate=validate)
-
-    def erase_and_program_scu_fw(self, file_path, validate=1):
-        logger.info(f"Programming SCU firmware file: {file_path}...")
-        self.erase_and_program_flash(file_path,
-                                     offset=self.FLASH_OFFSET_SCU_FW,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_SCU_FW, validate=validate)
-
-    def erase_and_program_scu_bl_config(self, file_path, validate=1):
-        logger.info("Programming SCU bootloader config file...")
-        local_file_path = file_path
-
-        # if SCU BL config does not exist, write the ab_offset value to config location for backward compatibility
-        if not os.path.exists(file_path):
-            logger.info(f"{file_path} doesn't exist, writing only offset to SCU BL config (backward compatibility)")
-            with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as scu_bl_config:
-                scu_bl_config.write(struct.pack('<I', self.ab_offset))
-                scu_bl_config.flush()
-
-                local_file_path = scu_bl_config.name
-
-        # Always program the SCU BL config file to both locations 0x5000 and 0x6000
-        self.erase_and_program_flash(local_file_path,
-                                     offset=self.FLASH_OFFSET_SCU_BL_CONFIG_1,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_SCU_BL_CONFIG, validate=validate)
-        self.erase_and_program_flash(local_file_path,
-                                     offset=self.FLASH_OFFSET_SCU_BL_CONFIG_2,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_SCU_BL_CONFIG, validate=validate)
-
-    def erase_and_program_scu_bl(self, file_path, validate=1):
-        logger.info(f"Programming SCU bootloader file: {file_path}...")
-        self.erase_and_program_flash(file_path,
-                                     offset=self.FLASH_OFFSET_SCU_BL,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_SCU_BL, validate=validate)
-
-    def erase_and_program_uboot_spl(self, file_path, validate=1):
-        self.erase_uboot_env_from_flash()
-        logger.info(f"Programming U-Boot SPL file: {file_path}...")
-        self.erase_and_program_flash(file_path,
-                                     offset=self.FLASH_OFFSET_SPL_UBOOT_BIN,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_UBOOT_SPL, validate=validate)
-
-    @contextmanager
-    def create_uboot_env(self, env_path, env_size):
-        env_image_path = tempfile.NamedTemporaryFile(suffix=".bin")
-        try:
-            subprocess.run(["mkenvimage", "-s", str(env_size), "-o", env_image_path.name, env_path])
-            yield env_image_path
-        finally:
-            env_image_path.close()
-
-    def erase_and_program_uboot_env(self, file_path, validate=1):
-        logger.info(f"Programming U-Boot env file: {file_path}...")
-        with self.create_uboot_env(file_path, self.FLASH_SECTION_SIZE_UBOOT_ENV) as env_image_path:
-            logger.info(f"Programming U-Boot env file: {env_image_path.name}...")
-            self.erase_and_program_flash(env_image_path.name,
-                                         offset=self.FLASH_OFFSET_UBOOT_ENV,
-                                         reserved_section_size=self.FLASH_SECTION_SIZE_UBOOT_ENV, validate=validate)
-
-    def erase_and_program_uboot_device_tree(self, file_path, validate=1):
-        logger.info(f"Programming u-boot device-tree file: {file_path}...")
-        self.erase_and_program_flash(file_path,
-                                     offset=self.FLASH_OFFSET_UBOOT_DEVICE_TREE,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_UBOOT_DEVICE_TREE, validate=validate)
-
-    def erase_and_program_customer_certificate(self, file_path, validate=1):
-        logger.info(f"Programming Customer certificate file: {file_path}...")
-        self.erase_and_program_flash(file_path,
-                                     offset=self.FLASH_OFFSET_CUSTOMER_CERTIFICATE,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_CUSTOMER_CERTIFICATE,
-                                     validate=validate)
-
-    def erase_and_program_uboot_tfa(self, file_path, validate=1):
-        logger.info(f"Programming U-Boot & TF-A file: {file_path}...")
-        self.erase_and_program_flash(file_path,
-                                     offset=self.FLASH_OFFSET_UBOOT_TFA,
-                                     reserved_section_size=self.FLASH_SECTION_SIZE_UBOOT_TFA,
-                                     validate=validate)
-
-
-def validate_mac_address(flash_mac_addr):
-    if len(flash_mac_addr) != MAC_ADDR_FORMAT_LEN:
-        raise argparse.ArgumentTypeError(f"Invalid MAC address: {flash_mac_addr}")
-    if not re.match(r'^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$', flash_mac_addr):
-        raise argparse.ArgumentTypeError(f"Invalid MAC address: {flash_mac_addr}")
-    return flash_mac_addr
 
 
 def run(scu_firmware=None, scu_bootloader=None, scu_bootloader_config=None, bootloader=None, bootloader_env=None,
@@ -225,29 +60,30 @@ def run(scu_firmware=None, scu_bootloader=None, scu_bootloader_config=None, boot
     flash_manager = Hailo15FlashManager(programmer, is_b_image)
 
     flash_manager.programmer.open_interface()
+    flash_manager.programmer.identify()
 
     if scu_firmware:
-        flash_manager.erase_and_program_scu_fw(scu_firmware, validate=verify)
+        flash_manager.program_scu_fw(scu_firmware, validate=verify)
     if scu_bootloader:
-        flash_manager.erase_and_program_scu_bl(scu_bootloader, validate=verify)
+        flash_manager.program_scu_bl(scu_bootloader, validate=verify)
     if scu_bootloader_config:
-        flash_manager.erase_and_program_scu_bl_config(scu_bootloader_config, validate=verify)
+        flash_manager.program_scu_bl_config(scu_bootloader_config, validate=verify)
     if bootloader:
-        flash_manager.erase_and_program_uboot_spl(bootloader, validate=verify)
+        flash_manager.program_uboot_spl(bootloader, validate=verify)
     # U-Boot env program must follow the uboot program
     if bootloader_env:
-        flash_manager.erase_and_program_uboot_env(bootloader_env, validate=verify)
+        flash_manager.program_uboot_env(bootloader_env, validate=verify)
     if customer_cert:
-        flash_manager.erase_and_program_customer_certificate(customer_cert, validate=verify)
+        flash_manager.program_customer_certificate(customer_cert, validate=verify)
     if uboot_device_tree:
-        flash_manager.erase_and_program_uboot_device_tree(uboot_device_tree, validate=verify)
+        flash_manager.program_uboot_device_tree(uboot_device_tree, validate=verify)
     if flash_mac_addr:
-        flash_manager.erase_and_program_device_mac_config(flash_mac_addr, validate=verify)
+        flash_manager.program_device_mac_config(flash_mac_addr, validate=verify)
     if uboot_tfa:
-        flash_manager.erase_and_program_uboot_tfa(uboot_tfa, validate=verify)
+        flash_manager.program_uboot_tfa(uboot_tfa, validate=verify)
 
     if uart_load and jump_to_flash:
-        uart_comm.jump_bootrom_flash()
+        uart_comm.jump_bootrom()
 
 
 def main():

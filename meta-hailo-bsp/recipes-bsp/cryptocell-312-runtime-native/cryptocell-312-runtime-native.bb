@@ -3,8 +3,9 @@ SRCREV = "91539d62a67662e40e7d925694e55bbc7e679f84"
 LIC_FILES_CHKSUM += "file://BSD-3-Clause.txt;md5=d2debfe1305a4e8cd5673d2b1f5e86ba"
 LICENSE = "BSD-3-Clause"
 
-DEPENDS = "openssl-native"
+DEPENDS = "openssl-native chrpath-native"
 RDEPENDS:${PN} = "python3-native"
+RDEPENDS:${PN} = "openssl-native"
 
 S = "${WORKDIR}/git"
 
@@ -21,11 +22,10 @@ do_compile () {
 }
 
 do_install () {
-    install -d ${D}${bindir}
-    install -d ${D}${libdir}
-    install -d ${D}${sysconfdir}
-    cp ${CP_ARGS} ${S}/utils/bin/. ${D}${bindir}
-    cp ${CP_ARGS} ${S}/utils/lib/. ${D}${libdir}
-    cp ${CP_ARGS} ${S}/utils/src/proj.cfg ${D}${sysconfdir}/cc_proj.cfg
-    sed -i 's|^#!/usr/local/bin/python3|#!/usr/bin/env python3|' ${D}${bindir}/*.py
+    install -d ${D}${sysconfdir}/cc312
+    cp ${CP_ARGS} ${S}/. ${D}${sysconfdir}/cc312
+    sed -i 's|^#!/usr/local/bin/python3|#!/usr/bin/env python3|' ${D}${sysconfdir}/cc312/utils/bin/*.py
+    # Fix the rpath of the cryptocell libraries so they are relative instead of absolute so they can find the openssl libraries
+    # after they are installed in sysroot of other recipes
+    chrpath -r '$ORIGIN/'$(realpath --canonicalize-missing --relative-to=${D}${sysconfdir}/cc312/utils/lib/ ${D}${libdir}) ${D}${sysconfdir}/cc312/utils/lib/*
 }

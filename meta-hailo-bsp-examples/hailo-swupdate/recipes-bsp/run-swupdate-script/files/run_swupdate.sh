@@ -39,16 +39,8 @@ function single_mode()
 {
     echo "$SINGLE_MODE_MSG"
 
-    # Prepare SW update for next system boot
-    if [[ -n "${F_SERVER}" ]]; then
-        fw_setenv serverip "${F_SERVER}"
-    fi
-    if [[ -n "${F_REMOTE_FILENAME}" ]]; then
-        fw_setenv swupdate_update_filename "${F_REMOTE_FILENAME}"
-    fi
-    fw_setenv swupdate_server_udp_logging_port "${F_LOGS_PORT}"
-    fw_setenv bootmenu_0 "Autodetect=run boot_swupdate_mmc"
-    fw_setenv bootdelay 0
+    /etc/set_sw_image.sh remote_update
+
     echo "Rebooting is about to start..."
     reboot
 
@@ -90,7 +82,11 @@ function dual_mode()
 
     if [ ${F_DONT_SWITCH} -eq 0 ]; then
         /etc/set_sw_image.sh "${update_copy}"
+
+        # Run the script which will cause reset of scratchpad register
+        /etc/init.d/hailo_linux_init.sh 99
     fi
+
     echo "SWUpdate finished."
 }
 
