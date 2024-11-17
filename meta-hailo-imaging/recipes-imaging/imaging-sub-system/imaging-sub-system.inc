@@ -11,8 +11,8 @@ inherit ${INHERITS}
 RDEPENDS:${PN} += "${RDEPENDS_IMAGING_SUB_SYSTEM}"
 DEPENDS += "${DEPENDS_IMAGING_SUB_SYSTEM}"
 
-SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.5.0/imaging-sub-system.tar.gz"
-SRC_URI[sha256sum] = "4bea0ba142e26c30d371be5941e8ace96f2c6517625bf45acaf29a78cb79d5ea"
+SRC_URI = "https://hailo-hailort.s3.eu-west-2.amazonaws.com/Hailo15/1.5.1/imaging-sub-system.tar.gz"
+SRC_URI[sha256sum] = "353df698b418950d055e46079d48588f3206a27bfdeefe977f116a16da8cfb91"
 
 B = "${WORKDIR}/imaging-sub-system/build"
 S = "${WORKDIR}/imaging-sub-system/scripts"
