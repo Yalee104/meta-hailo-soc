@@ -23,6 +23,13 @@ install_dist() {
 	install -m 0755 -D  ${S}/units/hailo/hdr_lib/hefs/hdr*.hef ${D}${bindir}
 }
 
+install_misc() {
+	install -m 0755 -D  ${S}/mediacontrol/server/media_server_cfg*.json ${D}${bindir}
+	
+	install -d ${D}${includedir}/imaging
+	cp ${S}/units/hailo/hdr_lib/src/*.hpp ${D}${includedir}/imaging
+}
+
 link_drivers() {
 	ln -s -r ${D}/lib/libHAILO_IMX334.so ${D}${bindir}/HAILO_IMX334.drv
 	ln -s -r ${D}/lib/libHAILO_IMX675.so ${D}${bindir}/HAILO_IMX675.drv
@@ -40,9 +47,7 @@ do_install() {
     copy_lib_files
 	install_isp_media_server
     install_dist
-
-	install -m 0755 -D  ${S}/mediacontrol/server/media_server_cfg*.json ${D}${bindir}
-
+	install_misc
 	link_drivers
 }
 

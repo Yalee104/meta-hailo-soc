@@ -21,12 +21,10 @@ install_dist:append() {
 	install -m 0755 -D  ${B}/dist/bin/fps ${D}${bindir}
 	install -m 0755 -D  ${B}/dist/bin/mcm_manager ${D}${bindir}
 	install -m 0755 -D  ${B}/dist/bin/hdr_manager ${D}${bindir}
-	install -m 0755 -D  ${S}/units/hailo/hdr_lib/hefs/*.hef ${D}${bindir}
     install -m 0755 -D  ${B}/dist/bin/v4l_event_handling_example ${D}${bindir}
 }
 
-link_drivers:prepend() {
-	install -d ${D}${includedir}/imaging
+install_misc:append() {
 	install -d ${D}${includedir}/imaging/cam_device
 	install -d ${D}${includedir}/imaging/ebase
 	install -d ${D}${includedir}/imaging/scmi
@@ -77,5 +75,4 @@ link_drivers:prepend() {
 	cp ${S}/units/fpga/fpga/include/* ${D}${includedir}/imaging/fpga
 	cp ${S}/units/isi/include/* ${D}${includedir}/imaging/isi
 	cp ${S}/units/cameric_drv/include/cameric_drv_common.h ${D}${includedir}/imaging/cameric_drv
-	cp ${S}/units/hailo/hdr_lib/src/*.hpp ${D}${includedir}/imaging
 }

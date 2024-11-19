@@ -1,6 +1,6 @@
 software =
 {
-	version = "bkc-build-2024-09-24-23-10-51";
+	version = "v1.5.1";
 	description = "Firmware update for Hailo SoC";
 	hardware-compatibility: [ "1.0"];
 
