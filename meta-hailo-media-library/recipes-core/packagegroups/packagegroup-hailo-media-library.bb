@@ -35,6 +35,8 @@ RDEPENDS:${PN}-dev-pkg = "\
     gstreamer1.0-plugins-ugly \
     htop \
     tmux \
+    ulimit \
     vim \
-    x264"
+    x264 \
+    medialib-vision-app" 
 
