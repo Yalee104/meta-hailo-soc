@@ -6,7 +6,7 @@ inherit module
 
 VIDEO_ENCODER_BRANCH = "1.5.1"
 
-SRCREV = "4cf570b7c3311c0ff42b64bb247fb9067136159e"
+SRCREV = "cdb595c4ce3018b1ad5b618c554ac5eb2c0bfe3b"
 SRC_URI = "git://git@github.com/hailo-ai/hailo-vision.git;protocol=https;branch=${VIDEO_ENCODER_BRANCH}"
 
 # Source code
